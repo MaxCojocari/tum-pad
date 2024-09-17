@@ -398,6 +398,145 @@ eBay's bidding platform lets sellers list items and buyers place bids. Transitio
    }
    ```
 
+### Task Timeouts
+
+1. **API Gateway (Nginx) Timeout**
+
+Configuring the timeout in Nginx gateway by setting the `proxy_read_timeout`, `proxy_connect_timeout`, and `proxy_send_timeout` to define how long Nginx will wait for a service to respond.
+
+```shell
+proxy_read_timeout 30s;
+proxy_connect_timeout 30s;
+proxy_send_timeout 30s;
+```
+
+2. **Microservices Timeout (NestJS)**
+
+In **NestJS**, I will use the `timeout()` operator from RxJS to set a timeout for any asynchronous request. For example:
+
+```typescript
+import { timeout } from "rxjs/operators";
+
+this.httpService.get(url).pipe(timeout(5000)); // Timeout after 5 seconds
+```
+
+3. **Database Timeout (Postgres)**
+
+I will Configure timeout in Postgres by setting the `statement_timeout` parameter to abort queries that run longer than a specified duration.
+
+```sql
+SET statement_timeout = '5s';  -- 5 seconds timeout for queries
+```
+
+4. **Redis Timeout**
+
+I will set timeouts in Redis commands by configuring the `timeout` parameter in Redis client.
+
+```javascript
+const client = redis.createClient({ socket: { connectTimeout: 5000 } }); // 5 seconds timeout
+```
+
+### Concurent Tasks Limit
+
+To handle Concurrent Task Limits, I will implement concurrency control mechanism to ensure that only a certain number of tasks are executed simultaneously by limiting concurrency with using semaphores or worker pools in service to control how many tasks are processed concurrently.
+
+In NestJS, I can use a semaphore or rate-limiter to limit the number of concurrent tasks.
+
+Limit Concurrent HTTP Requests in NestJS:
+
+```typescript
+import { HttpService } from "@nestjs/common";
+import * as pLimit from "p-limit";
+
+const limit = pLimit(5); // Limit to 5 concurrent tasks
+
+export class MyService {
+  constructor(private readonly httpService: HttpService) {}
+
+  async fetchMultipleUrls(urls: string[]) {
+    const tasks = urls.map((url) =>
+      limit(() => this.httpService.get(url).toPromise())
+    );
+    return await Promise.all(tasks);
+  }
+}
+```
+
+### Circuit Breaker
+
+The circuit breaker for this system will be implemented using `opossum` from Node.js. This circuit breaker will remove the service when a threshold of 3 errors is reached within the window of task timeout limit \* 3.5.
+
+```javascript
+const CircuitBreaker = require('opossum');
+const axios = require('axios');
+
+const taskTimeoutLimit = 5000; // Example: 5 seconds
+
+const options = {
+  // Task timeout (5 seconds)
+  timeout: taskTimeoutLimit,
+  // Fail after 3 consecutive errors (since 3 errors out of 3 attempts is 100%)
+  errorThresholdPercentage: 100,
+  // Wait for (task timeout limit * 3.5) before trying to recover
+  resetTimeout: taskTimeoutLimit * 3.5,
+};
+const breaker = new CircuitBreaker(() => axios.get('https://example.com'), options);
+
+breaker.fallback(() => 'Service currently unavailable');
+...
+breaker.fire();
+
+```
+
+### Health Monitoring and Alerts
+
+To implement **Health Monitoring and Alerts** for critical load (e.g., 60 pings per second), I'll use **Prometheus** to monitor request rates and **Alertmanager** for alerting.
+
+- **Monitor Load with Prometheus**: Each service will expose a `/metrics` endpoint that Prometheus scrapes. It will track the number of requests per second.
+- **Define Critical Load**: Set an alert rule in Prometheus that triggers when the request rate exceeds 60 pings per second.
+- **Alerting with Alertmanager**: When the threshold is breached, Alertmanager will send notifications (e.g., via email or Slack) to inform the team that the load is critical.
+
+### Load Balancing: Service Load
+
+To implement load balancing via service load with Nginx and Python, I will configure Nginx to use the **`least_conn`** directive, which routes traffic to the instance with the fewest active connections, balancing load effectively.
+
+Nginx config example:
+
+```nginx
+upstream my_python_services {
+    least_conn;
+    server 127.0.0.1:8000;
+    server 127.0.0.1:8001;
+}
+
+server {
+    listen 80;
+    location / {
+        proxy_pass http://my_python_services;
+    }
+}
+```
+
+For deeper load balancing, Python services can expose health metrics (e.g., via `psutil`), allowing Nginx to route traffic based on CPU or request load.
+
+### Unit Testing
+
+Unit tests for microservices will be written in **Jest** - popular test framework for Node.js applications.
+
+### Health Endpoints for Gateway and Service Discovery
+
+The status endpoints for both the Gateway and Service Discovery, I will use a simple `GET /status` endpoint that returns the current health or status of the service.
+
+Example response (JSON):
+
+```json
+{
+  "status": "up",
+  "timestamp": "2024-09-17T12:00:00.000Z",
+  "service": "gateway"
+}
+```
+
 ## Deployment & Scaling
 
 Each service, including
