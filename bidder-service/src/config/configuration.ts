@@ -3,10 +3,10 @@ export default () => ({
   app: {
     host: process.env.APP_HOST,
     port: +process.env.APP_PORT,
+    grpcUrl: process.env.APP_GRPC_URL,
   },
   auctionServiceGrpc: {
-    host: process.env.AUCTION_SERVICE_GRPC_HOST,
-    port: +process.env.AUCTION_SERVICE_GRPC_PORT,
+    url: process.env.AUCTION_SERVICE_GRPC_URL,
   },
   database: {
     host: process.env.POSTGRES_HOST,
