@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
 import { configurationSchema } from './config/configuration.schema';
 import { CacheModule } from '@nestjs/cache-manager';
+import { HealthModule } from './health/health.module';
 import * as redisStore from 'cache-manager-ioredis';
 
 @Module({
@@ -57,6 +58,7 @@ import * as redisStore from 'cache-manager-ioredis';
         }),
       },
     ]),
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
