@@ -1,24 +1,44 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { ClientGrpc } from '@nestjs/microservices';
+import { firstValueFrom, Observable } from 'rxjs';
+
+interface AuctionService {
+  placeBid(data: {
+    auctionId: number;
+    bidderId: number;
+    bidAmount: number;
+  }): Observable<{
+    bidId: number;
+    message: string;
+  }>;
+}
 
 @Injectable()
-export class AppService {
-  constructor(@Inject('AUCTION') private readonly auctionClient: ClientProxy) {}
+export class AppService implements OnModuleInit {
+  private auctionService: AuctionService;
+
+  constructor(@Inject('AUCTION_PACKAGE') private client: ClientGrpc) {}
+
+  onModuleInit() {
+    this.auctionService =
+      this.client.getService<AuctionService>('AuctionService');
+  }
 
   getHello(): string {
     return 'Hello World!';
   }
 
   async addBidInAuction() {
+    const data = {
+      auctionId: 1,
+      bidderId: 2,
+      bidAmount: 22.33,
+    };
     console.log('start addBidInAuction');
-    const result = await firstValueFrom(
-      this.auctionClient.send({ cmd: 'add_bid_in_auction' }, {}),
-    );
-    console.log('Response from Service B:', result);
-  }
 
-  receiveAck() {
-    console.log('received_ack');
+    const observable = this.auctionService.placeBid(data);
+    const result = await firstValueFrom(observable);
+    console.log('Response from Service B:', result);
+    console.dir(result, { depth: null });
   }
 }

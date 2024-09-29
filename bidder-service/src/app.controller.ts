@@ -1,6 +1,22 @@
 import { Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
-import { MessagePattern } from '@nestjs/microservices';
+import { GrpcMethod } from '@nestjs/microservices';
+
+interface Bid {
+  bidderId: number;
+  bidAmount: number;
+}
+
+interface AuctionUpdateDto {
+  auctionId: number;
+  bids: Bid[];
+  auctionStatus: string;
+  remainingTime: number;
+}
+
+interface CreateLobbyDto {
+  auctionId: number;
+}
 
 @Controller()
 export class AppController {
@@ -16,8 +32,17 @@ export class AppController {
     return this.appService.addBidInAuction();
   }
 
-  @MessagePattern({ cmd: 'ack_add_bid_in_auction' })
-  receiveAck() {
-    return this.appService.receiveAck();
+  @GrpcMethod('BidderService')
+  sendAuctionUpdate(data: AuctionUpdateDto) {
+    console.log('BidderService sendAuctionUpdate');
+    console.dir(data, { depth: null });
+    return { message: 'Ok' };
+  }
+
+  @GrpcMethod('BidderService')
+  createLobby(data: CreateLobbyDto) {
+    console.log('BidderService createLobby');
+    console.dir(data, { depth: null });
+    return { message: 'Ok' };
   }
 }

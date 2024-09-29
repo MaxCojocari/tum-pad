@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package auction;
+
+service AuctionService {
+    rpc PlaceBid (PlaceBidRequest) returns (PlaceBidResponse);
+}
+
+message PlaceBidRequest {
+    uint32 auctionId = 1;
+    uint32 bidderId = 2;
+    double bidAmount = 3;
+}
+
+message PlaceBidResponse {
+    uint32 bidId = 1;
+    string message = 2;
+}

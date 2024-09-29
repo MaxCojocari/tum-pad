@@ -2,14 +2,19 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { join } from 'path';
 
 @Module({
   imports: [
     ClientsModule.register([
       {
-        name: 'BIDDER',
-        transport: Transport.TCP,
-        options: { port: 3003 },
+        name: 'BIDDER_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'bidder',
+          protoPath: join(__dirname, '../../proto/bidder.proto'),
+          url: 'localhost:50052',
+        },
       },
     ]),
   ],
