@@ -1,0 +1,13 @@
+.gitignore
+.git
+README.md
+.vscode/
+.eslintrc.js
+.eslintignore
+.prettierrc
+node_modules/
+Dockerfile
+docker*
+dist
+.env*
+yarn.lock

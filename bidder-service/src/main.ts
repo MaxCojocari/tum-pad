@@ -20,7 +20,7 @@ async function bootstrap() {
     transport: Transport.GRPC,
     options: {
       package: 'bidder',
-      protoPath: join(__dirname, '../../proto/bidder.proto'),
+      protoPath: join(__dirname, './proto/bidder.proto'),
       url: 'localhost:50052',
     },
   });
