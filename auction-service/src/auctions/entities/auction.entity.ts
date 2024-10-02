@@ -1,11 +1,12 @@
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Item } from './item.entity';
-
-export enum AuctionStatus {
-  CREATED = 'CREATED',
-  RUNNING = 'RUNNING',
-  CLOSED = 'CLOSED',
-}
+import { AuctionStatus } from '../interfaces/auction-status.enum';
 
 @Entity()
 export class Auction {
@@ -16,9 +17,9 @@ export class Auction {
   name: string;
 
   @Column()
-  seller: string;
+  sellerId: number;
 
-  @OneToOne(() => Item, (item) => item.auction)
+  @ManyToOne(() => Item, (item) => item.auction)
   item: Item;
 
   @Column()

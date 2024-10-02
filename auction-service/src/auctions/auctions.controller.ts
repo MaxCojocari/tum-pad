@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { AuctionsService } from './auctions.service';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { UpdateAuctionDto } from './dto/update-auction.dto';
@@ -18,17 +26,22 @@ export class AuctionsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.auctionsService.findOne(+id);
+  findOne(@Param('id') id: number) {
+    return this.auctionsService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuctionDto: UpdateAuctionDto) {
-    return this.auctionsService.update(+id, updateAuctionDto);
+  update(@Param('id') id: number, @Body() updateAuctionDto: UpdateAuctionDto) {
+    return this.auctionsService.update(id, updateAuctionDto);
+  }
+
+  @Post(':id/close')
+  close(@Param('id') id: number) {
+    return this.auctionsService.close(id);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.auctionsService.remove(+id);
+  remove(@Param('id') id: number) {
+    return this.auctionsService.remove(id);
   }
 }

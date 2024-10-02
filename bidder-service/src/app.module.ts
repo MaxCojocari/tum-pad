@@ -27,7 +27,7 @@ import { HealthModule } from './health/health.module';
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.db'),
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize: true,
       }),
     }),
     ClientsModule.registerAsync([

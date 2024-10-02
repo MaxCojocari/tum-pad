@@ -11,7 +11,7 @@ services:
       - ./auction-service/.env
 
   postgres-auction:
-    image: postgres:15.1
+    image: postgres:17.0
     container_name: db-auction
     env_file:
       - ./auction-service/.env
@@ -21,7 +21,7 @@ services:
       - /data/postgres:/data/postgres
 
   postgres-bidder:
-    image: postgres:15.1
+    image: postgres:17.0
     container_name: db-bidder
     env_file:
       - ./bidder-service/.env
@@ -31,7 +31,7 @@ services:
       - /data/postgres:/data/postgres
 
   pgadmin:
-    image: dpage/pgadmin4:6.18
+    image: dpage/pgadmin4:8.12
     ports:
       - "8080:80"
     volumes:
@@ -39,27 +39,27 @@ services:
     env_file:
       - .env
 
-  auction-service:
-    container_name: auction-service
-    restart: always
-    env_file:
-      - ./auction-service/.env
-    ports:
-      - "3000:3000"
-    build:
-      context: ./auction-service
-      target: run
+  # auction-service:
+  #   container_name: auction-service
+  #   restart: always
+  #   env_file:
+  #     - ./auction-service/.env
+  #   ports:
+  #     - "3000:3000"
+  #   build:
+  #     context: ./auction-service
+  #     target: run
 
-  bidder-service:
-    container_name: bidder-service
-    restart: always
-    env_file:
-      - ./bidder-service/.env
-    ports:
-      - "3001:3001"
-    build:
-      context: ./bidder-service
-      target: run
+  # bidder-service:
+  #   container_name: bidder-service
+  #   restart: always
+  #   env_file:
+  #     - ./bidder-service/.env
+  #   ports:
+  #     - "3001:3001"
+  #   build:
+  #     context: ./bidder-service
+  #     target: run
 
 volumes:
   redis-data:

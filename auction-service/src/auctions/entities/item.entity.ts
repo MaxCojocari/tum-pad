@@ -1,6 +1,15 @@
-import { PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import {
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+  Entity,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { Auction } from './auction.entity';
 
+@Entity()
 export class Item {
   @PrimaryGeneratedColumn()
   id: number;
@@ -8,11 +17,10 @@ export class Item {
   @Column()
   name: string;
 
-  @OneToOne(() => Auction, (auction) => auction.item)
-  @JoinColumn()
+  @OneToMany(() => Auction, (auction) => auction.item, { cascade: true })
   auction: Auction;
 
-  @Column({ type: 'double' })
+  @Column({ type: 'double precision' })
   reservePrice: number;
 
   @Column()

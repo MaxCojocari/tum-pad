@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { join } from 'path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
@@ -30,7 +28,7 @@ import * as redisStore from 'cache-manager-ioredis';
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.db'),
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize: true,
       }),
     }),
     CacheModule.registerAsync({
@@ -44,21 +42,6 @@ import * as redisStore from 'cache-manager-ioredis';
         isGlobal: true,
       }),
     }),
-    ClientsModule.registerAsync([
-      {
-        name: 'BIDDER_PACKAGE',
-        imports: [ConfigModule],
-        inject: [ConfigService],
-        useFactory: async (configService: ConfigService) => ({
-          transport: Transport.GRPC,
-          options: {
-            package: 'bidder',
-            protoPath: join(__dirname, './proto/bidder.proto'),
-            url: configService.get<string>('bidderServiceGrpc.url'),
-          },
-        }),
-      },
-    ]),
     HealthModule,
     AuctionsModule,
   ],
