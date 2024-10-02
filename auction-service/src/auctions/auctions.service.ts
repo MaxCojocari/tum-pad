@@ -58,7 +58,10 @@ export class AuctionsService implements OnModuleInit {
 
     // await firstValueFrom(this.bidderService.createLobby({ auctionId: id }));
 
-    return this.auctionRepository.save(auction);
+    return {
+      auctionId: auction.id,
+      message: 'Auction created successfully',
+    };
   }
 
   findAll() {
@@ -82,6 +85,15 @@ export class AuctionsService implements OnModuleInit {
         _item = this.itemRepository.create(item);
         await this.itemRepository.save(_item);
       }
+    } else {
+      const auction = await this.auctionRepository.findOne({
+        where: { id },
+        relations: ['item'],
+      });
+
+      _item = await this.itemRepository.findOne({
+        where: { id: auction.item.id },
+      });
     }
 
     const start = this.validateStartTimestamp(startTimestamp);
@@ -141,11 +153,12 @@ export class AuctionsService implements OnModuleInit {
       auctionId: id,
       winnerId: highestBid.bidderId,
       finalPrice: highestBid.bidAmount,
+      message: 'Auction closed successfully',
     };
   }
 
   private validateStartTimestamp(startTimestamp: string) {
-    const now = dayjs();
+    const now = dayjs().format();
     const start = dayjs(startTimestamp);
 
     if (start.isBefore(now)) {

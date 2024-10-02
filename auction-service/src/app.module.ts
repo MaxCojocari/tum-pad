@@ -9,6 +9,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { HealthModule } from './health/health.module';
 import { AuctionsModule } from './auctions/auctions.module';
 import * as redisStore from 'cache-manager-ioredis';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import * as redisStore from 'cache-manager-ioredis';
       }),
     }),
     HealthModule,
+    ScheduleModule.forRoot(),
     AuctionsModule,
   ],
   controllers: [AppController],
