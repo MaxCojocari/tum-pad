@@ -8,6 +8,8 @@ import configuration from './config/configuration';
 import { configurationSchema } from './config/configuration.schema';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthModule } from './health/health.module';
+import { BiddersModule } from './bidders/bidders.module';
+import { BidsModule } from './bids/bids.module';
 
 @Module({
   imports: [
@@ -46,6 +48,8 @@ import { HealthModule } from './health/health.module';
       },
     ]),
     HealthModule,
+    BiddersModule,
+    BidsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
