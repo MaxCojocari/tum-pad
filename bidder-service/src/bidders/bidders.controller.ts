@@ -32,7 +32,7 @@ export class BiddersController {
 
   @Get(':id/bids')
   findBidsByBidder(@Param('id') id: number) {
-    return this.biddersService.findBidsByBidder(id);
+    return this.biddersService.findAllByBidder(id);
   }
 
   @Patch(':id')

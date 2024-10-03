@@ -32,21 +32,6 @@ import { BidsModule } from './bids/bids.module';
         synchronize: true,
       }),
     }),
-    ClientsModule.registerAsync([
-      {
-        name: 'AUCTION_PACKAGE',
-        imports: [ConfigModule],
-        inject: [ConfigService],
-        useFactory: async (configService: ConfigService) => ({
-          transport: Transport.GRPC,
-          options: {
-            package: 'auction',
-            protoPath: join(__dirname, './proto/auction.proto'),
-            url: configService.get<string>('auctionServiceGrpc.url'),
-          },
-        }),
-      },
-    ]),
     HealthModule,
     BiddersModule,
     BidsModule,

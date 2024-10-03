@@ -1,14 +1,16 @@
 import {
+  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import * as dayjs from 'dayjs';
 
 @Entity()
 export class Bid {
   @PrimaryGeneratedColumn()
-  bidId: string;
+  id: number;
 
   @Column()
   auctionId: number;
@@ -21,4 +23,9 @@ export class Bid {
 
   @CreateDateColumn({ type: 'timestamp' })
   timestamp: Date;
+
+  @BeforeInsert()
+  setLocalTimestamp() {
+    this.timestamp = new Date(dayjs().toISOString());
+  }
 }

@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package bids;
+
+service BidsService {
+    rpc FindBidsByAuction (FindBidsByAuctionRequest) returns (FindBidsByAuctionResponse);
+    rpc CreateLobby (CreateLobbyRequest) returns (CreateLobbyResponse);
+}
+
+message FindBidsByAuctionRequest {
+    uint32 auctionId = 1;
+}
+
+message FindBidsByAuctionResponse {
+    repeated Bid bids = 1;
+}
+
+message Bid {
+    uint32 id = 1;
+    uint32 auctionId = 2;
+    uint32 bidderId = 3;
+    double amount = 4;
+    string timestamp = 5;
+}
+
+message CreateLobbyRequest {
+    uint32 auctionId = 1;
+}
+
+message CreateLobbyResponse {
+    string message = 1;
+}

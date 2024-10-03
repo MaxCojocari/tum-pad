@@ -20,9 +20,9 @@ import { AuctionsJob } from './auctions.job';
         useFactory: async (configService: ConfigService) => ({
           transport: Transport.GRPC,
           options: {
-            package: 'bidder',
-            protoPath: join(__dirname, '../proto/bidder.proto'),
-            url: configService.get<string>('bidderServiceGrpc.url'),
+            package: 'bids',
+            protoPath: join(__dirname, '../proto/bids.proto'),
+            url: configService.get<string>('bidsServiceGrpc.url'),
           },
         }),
       },

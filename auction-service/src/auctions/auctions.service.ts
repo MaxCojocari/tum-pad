@@ -14,12 +14,12 @@ import { Item } from './entities/item.entity';
 import * as dayjs from 'dayjs';
 import { AuctionStatus } from './interfaces/auction-status.enum';
 import { ClientGrpc } from '@nestjs/microservices';
-import { BidderService } from './interfaces/bidder-service.interface';
+import { BidsServiceGrpc } from './interfaces/bids-service.interface';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class AuctionsService implements OnModuleInit {
-  private bidderService: BidderService;
+  private bidsService: BidsServiceGrpc;
 
   constructor(
     @InjectRepository(Auction)
@@ -30,7 +30,7 @@ export class AuctionsService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.bidderService = this.client.getService<BidderService>('BidderService');
+    this.bidsService = this.client.getService<BidsServiceGrpc>('BidsService');
   }
 
   async create(createAuctionDto: CreateAuctionDto) {
@@ -55,11 +55,14 @@ export class AuctionsService implements OnModuleInit {
       endTimestamp: end.toISOString(),
       status: AuctionStatus.CREATED,
     });
+    const savedAuction = await this.auctionRepository.save(auction);
 
-    // await firstValueFrom(this.bidderService.createLobby({ auctionId: id }));
+    await firstValueFrom(
+      this.bidsService.createLobby({ auctionId: savedAuction.id }),
+    );
 
     return {
-      auctionId: auction.id,
+      auctionId: savedAuction.id,
       message: 'Auction created successfully',
     };
   }
@@ -68,11 +71,21 @@ export class AuctionsService implements OnModuleInit {
     return this.auctionRepository.find({ relations: ['item'] });
   }
 
-  findOne(id: number) {
-    return this.auctionRepository.findOne({
+  async findOne(id: number) {
+    const auction = await this.auctionRepository.findOne({
       where: { id },
       relations: { item: true },
     });
+
+    if (!auction) {
+      throw new NotFoundException(`Auction with ID ${id} not found`);
+    }
+
+    const bids = await firstValueFrom(
+      this.bidsService.findBidsByAuction({ auctionId: id }),
+    );
+
+    return { ...auction, bids: bids.bids };
   }
 
   async update(id: number, updateAuctionDto: UpdateAuctionDto) {
@@ -125,7 +138,6 @@ export class AuctionsService implements OnModuleInit {
   async close(id: number) {
     const auction = await this.auctionRepository.findOne({
       where: { id, status: AuctionStatus.RUNNING },
-      relations: ['item'],
     });
 
     if (!auction) {
@@ -134,31 +146,42 @@ export class AuctionsService implements OnModuleInit {
       );
     }
 
-    // const highestBid = await this.bidRepository.findOne({
-    //   where: { auction: auction },
-    //   order: { bidAmount: 'DESC' },
-    // });
+    const highestBids = await firstValueFrom(
+      this.bidsService.findBidsByAuction({ auctionId: id }),
+    );
 
-    // TODO: grpc method
-    const highestBid = { bidderId: 1, bidAmount: 2 };
-
-    if (!highestBid) {
+    if (!highestBids) {
       throw new BadRequestException('No bids found for this auction.');
     }
 
     auction.status = AuctionStatus.CLOSED;
     await this.auctionRepository.save(auction);
 
+    const finalPriceBiggerThanReservePrice =
+      auction.item.reservePrice <= highestBids.bids[0].amount;
+
     return {
       auctionId: id,
-      winnerId: highestBid.bidderId,
-      finalPrice: highestBid.bidAmount,
-      message: 'Auction closed successfully',
+      winnerId: finalPriceBiggerThanReservePrice
+        ? highestBids.bids[0].bidderId
+        : null,
+      finalPrice: finalPriceBiggerThanReservePrice
+        ? highestBids.bids[0].amount
+        : 0,
     };
   }
 
+  async isAuctionRunning(auctionId: number) {
+    const auction = await this.findOne(auctionId);
+    const now = dayjs().add(3, 'hour').toISOString();
+    const start = dayjs(auction.startTimestamp);
+    const end = dayjs(auction.endTimestamp);
+
+    return { running: start.isBefore(now) && dayjs(now).isBefore(end) };
+  }
+
   private validateStartTimestamp(startTimestamp: string) {
-    const now = dayjs().format();
+    const now = dayjs().add(3, 'hour').toISOString();
     const start = dayjs(startTimestamp);
 
     if (start.isBefore(now)) {

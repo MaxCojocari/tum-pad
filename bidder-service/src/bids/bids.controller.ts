@@ -1,7 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { BidsService } from './bids.service';
 import { CreateBidDto } from './dto/create-bid.dto';
 import { UpdateBidDto } from './dto/update-bid.dto';
+import { GrpcMethod } from '@nestjs/microservices';
+import { CreateLobbyDto } from '../bidders/dto/create-lobby.dto';
+import { GetBidsByAuctionDto } from '../bidders/dto/get-bids-auction.dto';
 
 @Controller('bids')
 export class BidsController {
@@ -18,17 +29,27 @@ export class BidsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.bidsService.findOne(+id);
+  findOne(@Param('id') id: number) {
+    return this.bidsService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateBidDto: UpdateBidDto) {
-    return this.bidsService.update(+id, updateBidDto);
+  update(@Param('id') id: number, @Body() updateBidDto: UpdateBidDto) {
+    return this.bidsService.update(id, updateBidDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.bidsService.remove(+id);
+  remove(@Param('id') id: number) {
+    return this.bidsService.remove(id);
+  }
+
+  @GrpcMethod('BidsService')
+  createLobby(data: CreateLobbyDto) {
+    return this.bidsService.createLobby(data.auctionId);
+  }
+
+  @GrpcMethod('BidsService')
+  findBidsByAuction(data: GetBidsByAuctionDto) {
+    return this.bidsService.findBidsByAuction(data.auctionId);
   }
 }

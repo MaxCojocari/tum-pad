@@ -5,7 +5,7 @@ export default () => ({
     port: +process.env.APP_PORT,
     grpcUrl: process.env.APP_GRPC_URL,
   },
-  bidderServiceGrpc: {
+  bidsServiceGrpc: {
     url: process.env.BIDDER_SERVICE_GRPC_URL,
   },
   database: {

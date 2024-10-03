@@ -12,7 +12,7 @@ export class BiddersService {
     @InjectRepository(Bidder)
     private readonly bidderRepository: Repository<Bidder>,
     @InjectRepository(Bid)
-    private readonly bidRepository: Repository<Bid>,
+    private readonly bidsRepository: Repository<Bid>,
   ) {}
 
   create(createBidderDto: CreateBidderDto) {
@@ -24,8 +24,8 @@ export class BiddersService {
     return this.bidderRepository.find();
   }
 
-  findBidsByBidder(id: number) {
-    return this.bidRepository.find({ where: { bidderId: id } });
+  findAllByBidder(bidderId: number) {
+    return this.bidsRepository.find({ where: { bidderId } });
   }
 
   async findOne(id: number) {

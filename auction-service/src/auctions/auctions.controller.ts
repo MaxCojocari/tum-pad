@@ -10,6 +10,8 @@ import {
 import { AuctionsService } from './auctions.service';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { UpdateAuctionDto } from './dto/update-auction.dto';
+import { GrpcMethod } from '@nestjs/microservices';
+import { VerifyAuctionRunningDto } from './dto/verify-auction-running.dto';
 
 @Controller('auctions')
 export class AuctionsController {
@@ -43,5 +45,10 @@ export class AuctionsController {
   @Delete(':id')
   remove(@Param('id') id: number) {
     return this.auctionsService.remove(id);
+  }
+
+  @GrpcMethod('AuctionsService')
+  isAuctionRunning(data: VerifyAuctionRunningDto) {
+    return this.auctionsService.isAuctionRunning(data.auctionId);
   }
 }
