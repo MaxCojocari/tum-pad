@@ -4,6 +4,7 @@ import { Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { TimeoutInterceptor } from './interceptors/timeout.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -30,6 +31,8 @@ async function bootstrap() {
       url: configService.get<string>('app.grpcUrl'),
     },
   });
+
+  app.useGlobalInterceptors(new TimeoutInterceptor());
 
   await app.startAllMicroservices();
   await app.listen(port);
