@@ -33,7 +33,7 @@ export class AuctionsController {
   }
 
   @UseInterceptors(CacheInterceptor)
-  @CacheTTL(100)
+  @CacheTTL(30)
   @Get(':id')
   async findOne(@Param('id') id: number) {
     return await this.auctionsService.findOne(id);

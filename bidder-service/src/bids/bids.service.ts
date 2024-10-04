@@ -83,6 +83,7 @@ export class BidsService implements OnModuleInit {
   async remove(id: number) {
     const bid = await this.findOne(id);
     await this.bidsRepository.remove(bid);
+    return { message: `Bid with ID ${id} removed successfully.` };
   }
 
   createLobby(auctionId: number) {

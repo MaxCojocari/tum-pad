@@ -46,5 +46,6 @@ export class BiddersService {
   async remove(id: number) {
     const bidder = await this.findOne(id);
     await this.bidderRepository.remove(bidder);
+    return { message: `Bidder with ID ${id} removed successfully.` };
   }
 }

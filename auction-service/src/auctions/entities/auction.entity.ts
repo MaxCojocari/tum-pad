@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Item } from './item.entity';
 import { AuctionStatus } from '../interfaces/auction-status.enum';
+import { IsOptional } from 'class-validator';
 
 @Entity()
 export class Auction {
@@ -28,4 +29,10 @@ export class Auction {
     default: AuctionStatus.CREATED,
   })
   status: AuctionStatus;
+
+  @Column({ nullable: true })
+  winnerId?: number;
+
+  @Column({ type: 'double precision', nullable: true })
+  winningFinalAmount?: number;
 }

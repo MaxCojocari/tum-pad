@@ -109,19 +109,30 @@ export class AuctionsService implements OnModuleInit {
       });
     }
 
-    const start = this.validateStartTimestamp(startTimestamp);
-    const end = duration ? start.add(duration, 'minutes') : _item.endTimestamp;
+    let start: any;
+    let end: any;
+    let auction: Auction;
 
-    const auction = await this.auctionRepository.preload({
-      id,
-      ...auctionData,
-      startTimestamp: start.toISOString(),
-      endTimestamp: end.toISOString(),
-      item: _item,
-    });
+    if (!startTimestamp) {
+      auction = await this.auctionRepository.preload({
+        id,
+        ...auctionData,
+        item: _item,
+      });
+    } else {
+      start = this.validateStartTimestamp(startTimestamp);
+      end = duration ? start.add(duration, 'minutes') : _item.endTimestamp;
+      auction = await this.auctionRepository.preload({
+        id,
+        ...auctionData,
+        startTimestamp: start.toISOString(),
+        endTimestamp: end.toISOString(),
+        item: _item,
+      });
 
-    if (!auction) {
-      throw new NotFoundException(`Auction with ID ${id} not found`);
+      if (!auction) {
+        throw new NotFoundException(`Auction with ID ${id} not found.`);
+      }
     }
 
     return this.auctionRepository.save(auction);
@@ -133,6 +144,7 @@ export class AuctionsService implements OnModuleInit {
       throw new Error(`Auction with ID ${id} not found.`);
     }
     await this.auctionRepository.remove(auction);
+    return { message: `Auction with ID ${id} removed successfully.` };
   }
 
   async close(id: number) {
@@ -155,19 +167,15 @@ export class AuctionsService implements OnModuleInit {
     }
 
     auction.status = AuctionStatus.CLOSED;
-    await this.auctionRepository.save(auction);
+    auction.winnerId = highestBids.bids[0].bidderId;
+    auction.winningFinalAmount = highestBids.bids[0].amount;
 
-    const finalPriceBiggerThanReservePrice =
-      auction.item.reservePrice <= highestBids.bids[0].amount;
+    await this.auctionRepository.save(auction);
 
     return {
       auctionId: id,
-      winnerId: finalPriceBiggerThanReservePrice
-        ? highestBids.bids[0].bidderId
-        : null,
-      finalPrice: finalPriceBiggerThanReservePrice
-        ? highestBids.bids[0].amount
-        : 0,
+      winnerId: auction.winnerId,
+      finalPrice: auction.winningFinalAmount,
     };
   }
 
