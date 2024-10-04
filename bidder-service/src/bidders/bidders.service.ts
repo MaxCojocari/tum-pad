@@ -39,7 +39,6 @@ export class BiddersService {
   async update(id: number, updateBidderDto: UpdateBidderDto) {
     const bidder = await this.findOne(id);
     Object.assign(bidder, updateBidderDto);
-
     return this.bidderRepository.save(bidder);
   }
 
