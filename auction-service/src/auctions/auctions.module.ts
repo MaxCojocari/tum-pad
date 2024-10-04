@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { AuctionsJob } from './auctions.job';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [

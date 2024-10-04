@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -11,6 +11,7 @@ import { AuctionsModule } from './auctions/auctions.module';
 import * as redisStore from 'cache-manager-ioredis';
 import { ScheduleModule } from '@nestjs/schedule';
 
+@Global()
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -39,7 +40,6 @@ import { ScheduleModule } from '@nestjs/schedule';
         store: redisStore,
         host: configService.get<string>('redis.host'),
         port: configService.get<string>('redis.port'),
-        ttl: 10,
         isGlobal: true,
       }),
     }),
@@ -49,5 +49,6 @@ import { ScheduleModule } from '@nestjs/schedule';
   ],
   controllers: [AppController],
   providers: [AppService],
+  exports: [CacheModule],
 })
 export class AppModule {}

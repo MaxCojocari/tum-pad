@@ -6,12 +6,15 @@ import {
   Patch,
   Param,
   Delete,
+  UseInterceptors,
+  Inject,
 } from '@nestjs/common';
 import { AuctionsService } from './auctions.service';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { UpdateAuctionDto } from './dto/update-auction.dto';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VerifyAuctionRunningDto } from './dto/verify-auction-running.dto';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('auctions')
 export class AuctionsController {
@@ -22,14 +25,19 @@ export class AuctionsController {
     return this.auctionsService.create(createAuctionDto);
   }
 
+  @UseInterceptors(CacheInterceptor)
+  @CacheKey('auctions')
+  @CacheTTL(100)
   @Get()
-  findAll() {
-    return this.auctionsService.findAll();
+  async findAll() {
+    return await this.auctionsService.findAll();
   }
 
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(100)
   @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.auctionsService.findOne(id);
+  async findOne(@Param('id') id: number) {
+    return await this.auctionsService.findOne(id);
   }
 
   @Patch(':id')
