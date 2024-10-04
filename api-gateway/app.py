@@ -1,10 +1,17 @@
 from flask import Flask
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from controllers.auctions import auctions_blueprint
 from controllers.bidders import bidders_blueprint
 from controllers.bids import bids_blueprint
-from services.service_urls import AUCTIONS_SERVICE_URL
 
 app = Flask(__name__)
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["5 per minute"]
+)
 
 app.json.sort_keys = False
 
