@@ -26,14 +26,14 @@ export class AuctionsController {
 
   @UseInterceptors(CacheInterceptor)
   @CacheKey('auctions')
-  @CacheTTL(100)
+  @CacheTTL(10)
   @Get()
   async findAll() {
     return await this.auctionsService.findAll();
   }
 
   @UseInterceptors(CacheInterceptor)
-  @CacheTTL(30)
+  @CacheTTL(10)
   @Get(':id')
   async findOne(@Param('id') id: number) {
     return await this.auctionsService.findOne(id);

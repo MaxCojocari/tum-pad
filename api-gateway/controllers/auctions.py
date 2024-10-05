@@ -6,7 +6,7 @@ from services.service_urls import AUCTIONS_SERVICE_URL
 auctions_blueprint = Blueprint('auctions', __name__)
 
 # global timeout value in seconds
-TIMEOUT = 5
+TIMEOUT = 3
 
 @auctions_blueprint.route('/', methods=['POST'])
 def create_auction():

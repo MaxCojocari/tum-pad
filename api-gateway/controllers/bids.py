@@ -15,7 +15,7 @@ def create_bid():
         response = requests.post(f'{BIDDERS_SERVICE_URL}/bids', json=data, timeout=TIMEOUT)
         return jsonify(response.json()), response.status_code
     except Timeout:
-        return jsonify({'error': 'Request to auction service timed out'}), 504
+        return jsonify({'error': 'Request to bidder service timed out'}), 504
     except RequestException as e:
         return jsonify({'error': str(e)}), 500
 
@@ -25,7 +25,7 @@ def get_all_bids():
         response = requests.get(f'{BIDDERS_SERVICE_URL}/bids', timeout=TIMEOUT)
         return jsonify(response.json()), response.status_code
     except Timeout:
-        return jsonify({'error': 'Request to auction service timed out'}), 504
+        return jsonify({'error': 'Request to bidder service timed out'}), 504
     except RequestException as e:
         return jsonify({'error': str(e)}), 500
 
@@ -35,7 +35,7 @@ def get_bid(id):
         response = requests.get(f'{BIDDERS_SERVICE_URL}/bids/{id}', timeout=TIMEOUT)
         return jsonify(response.json()), response.status_code
     except Timeout:
-        return jsonify({'error': 'Request to auction service timed out'}), 504
+        return jsonify({'error': 'Request to bidder service timed out'}), 504
     except RequestException as e:
         return jsonify({'error': str(e)}), 500
 
@@ -46,7 +46,7 @@ def update_bid(id):
         response = requests.patch(f'{BIDDERS_SERVICE_URL}/bids/{id}', json=data, timeout=TIMEOUT)
         return jsonify(response.json()), response.status_code
     except Timeout:
-        return jsonify({'error': 'Request to auction service timed out'}), 504
+        return jsonify({'error': 'Request to bidder service timed out'}), 504
     except RequestException as e:
         return jsonify({'error': str(e)}), 500
 
@@ -56,6 +56,6 @@ def remove_bid(id):
         response = requests.delete(f'{BIDDERS_SERVICE_URL}/bids/{id}', timeout=TIMEOUT)
         return jsonify(response.json()), response.status_code
     except Timeout:
-        return jsonify({'error': 'Request to auction service timed out'}), 504
+        return jsonify({'error': 'Request to bidder service timed out'}), 504
     except RequestException as e:
         return jsonify({'error': str(e)}), 500
