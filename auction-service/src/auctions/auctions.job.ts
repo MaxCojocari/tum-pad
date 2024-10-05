@@ -51,7 +51,7 @@ export class AuctionsJob {
       );
 
       auction.status = AuctionStatus.CLOSED;
-      if (highestBids) {
+      if (highestBids.bids) {
         auction.winnerId = highestBids.bids[0].bidderId;
         auction.winningFinalAmount = highestBids.bids[0].amount;
       }

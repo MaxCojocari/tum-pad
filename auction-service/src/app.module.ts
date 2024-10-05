@@ -26,7 +26,7 @@ import { ScheduleModule } from '@nestjs/schedule';
         type: 'postgres',
         host: configService.get<string>('database.host'),
         port: configService.get<number>('database.port'),
-        username: configService.get<string>('database.username'),
+        username: configService.get<string>('database.user'),
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.db'),
         autoLoadEntities: true,
@@ -40,6 +40,7 @@ import { ScheduleModule } from '@nestjs/schedule';
         store: redisStore,
         host: configService.get<string>('redis.host'),
         port: configService.get<string>('redis.port'),
+        ttl: 10,
         isGlobal: true,
       }),
     }),
@@ -51,4 +52,16 @@ import { ScheduleModule } from '@nestjs/schedule';
   providers: [AppService],
   exports: [CacheModule],
 })
-export class AppModule {}
+export class AppModule {
+  constructor(private configService: ConfigService) {
+    console.log({
+      host: this.configService.get<string>('database.host'),
+      port: this.configService.get<number>('database.port'),
+      username: this.configService.get<string>('database.user'),
+      password: this.configService.get<string>('database.password'),
+      database: this.configService.get<string>('database.db'),
+      redisHost: this.configService.get<string>('redis.host'),
+      redisPort: this.configService.get<string>('redis.port'),
+    });
+  }
+}

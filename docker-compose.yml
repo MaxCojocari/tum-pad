@@ -8,13 +8,13 @@ services:
     volumes:
       - redis-data:/data
     env_file:
-      - ./auction-service/.env
+      - ./auction-service/.env.local
 
   postgres-auction:
     image: postgres:17.0
     container_name: db-auction
     env_file:
-      - ./auction-service/.env
+      - ./auction-service/.env.local
     ports:
       - "5432:5432"
     volumes:
@@ -24,7 +24,7 @@ services:
     image: postgres:17.0
     container_name: db-bidder
     env_file:
-      - ./bidder-service/.env
+      - ./bidder-service/.env.local
     ports:
       - "5433:5432"
     volumes:
@@ -39,27 +39,36 @@ services:
     env_file:
       - .env
 
-  # auction-service:
-  #   container_name: auction-service
-  #   restart: always
-  #   env_file:
-  #     - ./auction-service/.env
-  #   ports:
-  #     - "3000:3000"
-  #   build:
-  #     context: ./auction-service
-  #     target: run
+  auction-service:
+    container_name: auction-service
+    restart: always
+    env_file:
+      - ./auction-service/.env.local
+    ports:
+      - "3000:3000"
+    build:
+      context: ./auction-service
+      target: run
 
-  # bidder-service:
-  #   container_name: bidder-service
-  #   restart: always
-  #   env_file:
-  #     - ./bidder-service/.env
-  #   ports:
-  #     - "3001:3001"
-  #   build:
-  #     context: ./bidder-service
-  #     target: run
+  bidder-service:
+    container_name: bidder-service
+    restart: always
+    env_file:
+      - ./bidder-service/.env.local
+    ports:
+      - "3001:3001"
+    build:
+      context: ./bidder-service
+      target: run
+
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: ./api-gateway
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./api-gateway/.env.local
 
 volumes:
   redis-data:

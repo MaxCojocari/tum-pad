@@ -25,7 +25,7 @@ import { BidsModule } from './bids/bids.module';
         type: 'postgres',
         host: configService.get<string>('database.host'),
         port: configService.get<number>('database.port'),
-        username: configService.get<string>('database.username'),
+        username: configService.get<string>('database.user'),
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.db'),
         autoLoadEntities: true,
@@ -39,4 +39,14 @@ import { BidsModule } from './bids/bids.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  constructor(private configService: ConfigService) {
+    console.log({
+      host: this.configService.get<string>('database.host'),
+      port: this.configService.get<number>('database.port'),
+      username: this.configService.get<string>('database.user'),
+      password: this.configService.get<string>('database.password'),
+      database: this.configService.get<string>('database.db'),
+    });
+  }
+}
