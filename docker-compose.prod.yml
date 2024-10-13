@@ -1,0 +1,116 @@
+services:
+  redis:
+    image: redis:6.2-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    env_file:
+      - ./auction-service/.env.local
+
+  redis-registry:
+    image: redis:6.2-alpine
+    container_name: redis-registry
+    restart: always
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data-registry:/data
+    env_file:
+      - ./api-gateway/.env.local
+
+  postgres-auction:
+    image: postgres:17.0
+    container_name: db-auction
+    env_file:
+      - ./auction-service/.env.local
+    ports:
+      - "5432:5432"
+    volumes:
+      - /data/postgres:/data/postgres
+
+  postgres-bidder:
+    image: postgres:17.0
+    container_name: db-bidder
+    env_file:
+      - ./bidder-service/.env.local
+    ports:
+      - "5433:5432"
+    volumes:
+      - /data/postgres:/data/postgres
+
+  pgadmin:
+    image: dpage/pgadmin4:8.12
+    ports:
+      - "8080:80"
+    volumes:
+      - /data/pgadmin:/root/.pgadmin
+    env_file:
+      - .env
+
+  auction-service-1:
+    container_name: auction-service-1
+    restart: always
+    env_file:
+      - ./auction-service/.env.local
+    environment:
+      - APP_PORT=3000
+    ports:
+      - "3000:3000"
+    build:
+      context: ./auction-service
+      target: run
+
+  auction-service-2:
+    container_name: auction-service-2
+    restart: always
+    env_file:
+      - ./auction-service/.env.local
+    environment:
+      - APP_PORT=3001
+    ports:
+      - "3001:3001"
+    build:
+      context: ./auction-service
+      target: run
+
+  auction-service-3:
+    container_name: auction-service-3
+    restart: always
+    env_file:
+      - ./auction-service/.env.local
+    environment:
+      - APP_PORT=3002
+    ports:
+      - "3002:3002"
+    build:
+      context: ./auction-service
+      target: run
+
+  bidder-service:
+    container_name: bidder-service
+    restart: always
+    env_file:
+      - ./bidder-service/.env.local
+    environment:
+      - APP_PORT=3003
+    ports:
+      - "3003:3003"
+    build:
+      context: ./bidder-service
+      target: run
+
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: ./api-gateway
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./api-gateway/.env.local
+
+volumes:
+  redis-data:
+  redis-data-registry:

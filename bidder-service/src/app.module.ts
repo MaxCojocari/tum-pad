@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { join } from 'path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
 import { configurationSchema } from './config/configuration.schema';
@@ -10,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthModule } from './health/health.module';
 import { BiddersModule } from './bidders/bidders.module';
 import { BidsModule } from './bids/bids.module';
+import { ServiceRegistrationModule } from './service-registration/service-registration.module';
 
 @Module({
   imports: [
@@ -35,6 +34,7 @@ import { BidsModule } from './bids/bids.module';
     HealthModule,
     BiddersModule,
     BidsModule,
+    ServiceRegistrationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

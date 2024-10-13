@@ -10,4 +10,5 @@ export const configurationSchema = Joi.object({
   APP_PORT: Joi.number().required(),
   APP_GRPC_URL: Joi.string().required(),
   AUCTION_SERVICE_GRPC_URL: Joi.string().required(),
+  SERVICE_REGISTRY_GRPC_URL: Joi.string().required(),
 });

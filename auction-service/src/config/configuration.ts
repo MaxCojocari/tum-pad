@@ -19,4 +19,7 @@ export default () => ({
     host: process.env.REDIS_HOST,
     port: +process.env.REDIS_PORT || 6379,
   },
+  serviceRegistryGrpc: {
+    url: process.env.SERVICE_REGISTRY_GRPC_URL,
+  },
 });

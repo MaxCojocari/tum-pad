@@ -15,4 +15,7 @@ export default () => ({
     password: process.env.POSTGRES_PASSWORD,
     db: process.env.POSTGRES_DB,
   },
+  serviceRegistryGrpc: {
+    url: process.env.SERVICE_REGISTRY_GRPC_URL,
+  },
 });
