@@ -1,7 +1,6 @@
 import { NestApplication, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Transport } from '@nestjs/microservices';
-import { join } from 'path';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TimeoutInterceptor } from './interceptors/timeout.interceptor';
@@ -13,6 +12,12 @@ async function bootstrap() {
   const host = configService.get<string>('app.host');
   const port = configService.get<number>('app.port');
   const logger = new Logger(NestApplication.name);
+  const rmq = {
+    host: configService.get<string>('rmq.host'),
+    port: configService.get<number>('rmq.port'),
+    user: configService.get<number>('rmq.user'),
+    password: configService.get<number>('rmq.password'),
+  };
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -25,18 +30,17 @@ async function bootstrap() {
     }),
   );
 
-  // app.connectMicroservice({
-  //   transport: Transport.GRPC,
-  //   options: {
-  //     package: 'bids',
-  //     protoPath: join(__dirname, './proto/bids.proto'),
-  //     url: configService.get<string>('app.grpcUrl'),
-  //   },
-  // });
+  app.connectMicroservice({
+    transport: Transport.NATS,
+    options: {
+      servers: ['nats://localhost:4222'],
+      queue: 'transporter_queue',
+    },
+  });
 
   app.useGlobalInterceptors(new TimeoutInterceptor());
 
-  // await app.startAllMicroservices();
+  await app.startAllMicroservices();
   await app.listen(port);
 
   logger.log(`Application is running on: ${await app.getUrl()}`);

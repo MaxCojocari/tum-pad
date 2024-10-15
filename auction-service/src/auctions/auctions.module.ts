@@ -6,7 +6,6 @@ import { Auction } from './entities/auction.entity';
 import { Item } from './entities/item.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { join } from 'path';
 import { AuctionsJob } from './auctions.job';
 
 @Module({
@@ -14,15 +13,14 @@ import { AuctionsJob } from './auctions.job';
     TypeOrmModule.forFeature([Auction, Item]),
     ClientsModule.registerAsync([
       {
-        name: 'BIDDER_PACKAGE',
+        name: 'BIDDER_SERVICE',
         imports: [ConfigModule],
         inject: [ConfigService],
         useFactory: async (configService: ConfigService) => ({
-          transport: Transport.GRPC,
+          transport: Transport.NATS,
           options: {
-            package: 'bids',
-            protoPath: join(__dirname, '../proto/bids.proto'),
-            url: configService.get<string>('bidsServiceGrpc.url'),
+            servers: ['nats://localhost:4222'],
+            queue: 'transporter_queue'
           },
         }),
       },

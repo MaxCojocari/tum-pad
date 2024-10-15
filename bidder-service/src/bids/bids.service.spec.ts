@@ -36,7 +36,7 @@ describe('BidsService', () => {
       providers: [
         BidsService,
         { provide: getRepositoryToken(Bid), useFactory: mockBidsRepository },
-        { provide: 'AUCTION_PACKAGE', useFactory: mockClientGrpc },
+        { provide: 'AUCTION_SERVICE', useFactory: mockClientGrpc },
       ],
     }).compile();
 
@@ -44,7 +44,7 @@ describe('BidsService', () => {
     bidsRepository = module.get<jest.Mocked<Repository<Bid>>>(
       getRepositoryToken(Bid),
     );
-    clientGrpc = module.get<ClientGrpc>('AUCTION_PACKAGE') as any;
+    clientGrpc = module.get<ClientGrpc>('AUCTION_SERVICE') as any;
 
     auctionsService = clientGrpc.getService('AuctionsService');
 

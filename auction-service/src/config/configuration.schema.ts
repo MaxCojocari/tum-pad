@@ -10,7 +10,5 @@ export const configurationSchema = Joi.object({
   REDIS_PORT: Joi.number().default(6379),
   APP_HOST: Joi.string().required(),
   APP_PORT: Joi.number().required(),
-  APP_GRPC_URL: Joi.string().required(),
-  BIDDER_SERVICE_GRPC_URL: Joi.string().required(),
   SERVICE_REGISTRY_GRPC_URL: Joi.string().required(),
 });

@@ -10,7 +10,13 @@ import {
 import { BidsService } from './bids.service';
 import { CreateBidDto } from './dto/create-bid.dto';
 import { UpdateBidDto } from './dto/update-bid.dto';
-import { GrpcMethod } from '@nestjs/microservices';
+import {
+  Ctx,
+  GrpcMethod,
+  MessagePattern,
+  Payload,
+  RmqContext,
+} from '@nestjs/microservices';
 import { CreateLobbyDto } from '../bidders/dto/create-lobby.dto';
 import { GetBidsByAuctionDto } from '../bidders/dto/get-bids-auction.dto';
 
@@ -43,13 +49,17 @@ export class BidsController {
     return this.bidsService.remove(id);
   }
 
-  @GrpcMethod('BidsService')
-  createLobby(data: CreateLobbyDto) {
+  @MessagePattern({ cmd: 'create-lobby' })
+  createLobby(@Payload() data: CreateLobbyDto, @Ctx() context: RmqContext) {
     return this.bidsService.createLobby(data.auctionId);
   }
 
-  @GrpcMethod('BidsService')
-  findBidsByAuction(data: GetBidsByAuctionDto) {
+  @MessagePattern({ cmd: 'get-bids-by-auction' })
+  findBidsByAuction(
+    @Payload() data: CreateLobbyDto,
+    @Ctx() context: RmqContext,
+  ) {
+    console.log('get-bids-by-auction', data);
     return this.bidsService.findBidsByAuction(data.auctionId);
   }
 }

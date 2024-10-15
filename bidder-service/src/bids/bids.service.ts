@@ -3,39 +3,34 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-  OnModuleInit,
 } from '@nestjs/common';
 import { CreateBidDto } from './dto/create-bid.dto';
 import { UpdateBidDto } from './dto/update-bid.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Bid } from './entities/bid.entity';
-import { AuctionsServiceGrpc } from './interfaces/auction-service.interface';
-import { ClientGrpc } from '@nestjs/microservices';
+import { IsAuctionRunningResponse } from './interfaces/auction-service.interface';
+import { ClientProxy } from '@nestjs/microservices';
 import * as dayjs from 'dayjs';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable()
-export class BidsService implements OnModuleInit {
-  private auctionsService: AuctionsServiceGrpc;
-
+export class BidsService {
   constructor(
     @InjectRepository(Bid)
     private readonly bidsRepository: Repository<Bid>,
-    @Inject('AUCTION_PACKAGE') private readonly client: ClientGrpc,
+    @Inject('AUCTION_SERVICE') private readonly rabbitClient: ClientProxy,
   ) {}
 
-  onModuleInit() {
-    this.auctionsService =
-      this.client.getService<AuctionsServiceGrpc>('AuctionsService');
-  }
-
   async create(createBidDto: CreateBidDto) {
-    const isRunning = await firstValueFrom(
-      this.auctionsService.isAuctionRunning({
-        auctionId: createBidDto.auctionId,
-      }),
+    const isRunning: IsAuctionRunningResponse = await firstValueFrom(
+      this.rabbitClient.send(
+        { cmd: 'is-auction-running' },
+        { auctionId: createBidDto.auctionId },
+      ),
     );
+
+    console.log({ isRunning });
 
     if (!isRunning.running) {
       throw new BadRequestException(

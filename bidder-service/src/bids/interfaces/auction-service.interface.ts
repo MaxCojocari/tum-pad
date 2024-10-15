@@ -1,15 +1,9 @@
 import { Observable } from 'rxjs';
 
-interface IsAuctionRunningRequest {
+export interface IsAuctionRunningRequest {
   auctionId: number;
 }
 
-interface IsAuctionRunningResponse {
+export interface IsAuctionRunningResponse {
   running: boolean;
-}
-
-export interface AuctionsServiceGrpc {
-  isAuctionRunning(
-    request: IsAuctionRunningRequest,
-  ): Observable<IsAuctionRunningResponse>;
 }

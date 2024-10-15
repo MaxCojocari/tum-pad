@@ -20,7 +20,7 @@ limiter = Limiter(
     get_remote_address,
     app=app,
     storage_uri=f"redis://{REDIS_HOST}:{REDIS_PORT}",
-    default_limits=["5 per minute"]
+    default_limits=["100 per minute"]
 )
 
 app.json.sort_keys = False

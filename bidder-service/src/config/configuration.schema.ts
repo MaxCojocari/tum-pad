@@ -8,7 +8,5 @@ export const configurationSchema = Joi.object({
   POSTGRES_DB: Joi.string().required(),
   APP_HOST: Joi.string().required(),
   APP_PORT: Joi.number().required(),
-  APP_GRPC_URL: Joi.string().required(),
-  AUCTION_SERVICE_GRPC_URL: Joi.string().required(),
   SERVICE_REGISTRY_GRPC_URL: Joi.string().required(),
 });

@@ -5,22 +5,16 @@ import * as dayjs from 'dayjs';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Auction } from './entities/auction.entity';
 import { AuctionStatus } from './interfaces/auction-status.enum';
-import { ClientGrpc } from '@nestjs/microservices';
-import { BidsServiceGrpc } from './interfaces/bids-service.interface';
+import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import { FindBidsByAuctionResponse } from './interfaces/bids-service.interface';
 
 @Injectable()
 export class AuctionsJob {
-  private bidsService: BidsServiceGrpc;
-
-  onModuleInit() {
-    this.bidsService = this.client.getService<BidsServiceGrpc>('BidsService');
-  }
-
   constructor(
     @InjectRepository(Auction)
     private readonly auctionRepository: Repository<Auction>,
-    @Inject('BIDDER_PACKAGE') private readonly client: ClientGrpc,
+    @Inject('BIDDER_SERVICE') private readonly rabbitClient: ClientProxy,
   ) {}
 
   @Cron(CronExpression.EVERY_SECOND)
@@ -46,12 +40,15 @@ export class AuctionsJob {
     });
 
     for (const auction of auctionsToClose) {
-      const highestBids = await firstValueFrom(
-        this.bidsService.findBidsByAuction({ auctionId: auction.id }),
+      const highestBids: FindBidsByAuctionResponse = await firstValueFrom(
+        this.rabbitClient.send(
+          { cmd: 'get-bids-by-auction' },
+          { auctionId: auction.id },
+        ),
       );
 
       auction.status = AuctionStatus.CLOSED;
-      if (highestBids.bids) {
+      if (highestBids.bids && highestBids.bids.length > 0) {
         auction.winnerId = highestBids.bids[0].bidderId;
         auction.winningFinalAmount = highestBids.bids[0].amount;
       }

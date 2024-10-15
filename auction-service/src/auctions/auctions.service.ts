@@ -3,7 +3,6 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-  OnModuleInit,
 } from '@nestjs/common';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { UpdateAuctionDto } from './dto/update-auction.dto';
@@ -13,25 +12,19 @@ import { Auction } from './entities/auction.entity';
 import { Item } from './entities/item.entity';
 import * as dayjs from 'dayjs';
 import { AuctionStatus } from './interfaces/auction-status.enum';
-import { ClientGrpc } from '@nestjs/microservices';
-import { BidsServiceGrpc } from './interfaces/bids-service.interface';
-import { firstValueFrom } from 'rxjs';
+import { ClientProxy } from '@nestjs/microservices';
+import { FindBidsByAuctionResponse } from './interfaces/bids-service.interface';
+import { firstValueFrom, timeout } from 'rxjs';
 
 @Injectable()
-export class AuctionsService implements OnModuleInit {
-  private bidsService: BidsServiceGrpc;
-
+export class AuctionsService {
   constructor(
     @InjectRepository(Auction)
     private readonly auctionRepository: Repository<Auction>,
     @InjectRepository(Item)
     private readonly itemRepository: Repository<Item>,
-    @Inject('BIDDER_PACKAGE') private readonly client: ClientGrpc,
+    @Inject('BIDDER_SERVICE') private readonly rabbitClient: ClientProxy,
   ) {}
-
-  onModuleInit() {
-    this.bidsService = this.client.getService<BidsServiceGrpc>('BidsService');
-  }
 
   async create(createAuctionDto: CreateAuctionDto) {
     const { item, startTimestamp, duration, ...auctionData } = createAuctionDto;
@@ -58,7 +51,9 @@ export class AuctionsService implements OnModuleInit {
     const savedAuction = await this.auctionRepository.save(auction);
 
     await firstValueFrom(
-      this.bidsService.createLobby({ auctionId: savedAuction.id }),
+      this.rabbitClient
+        .send({ cmd: 'create-lobby' }, { auctionId: savedAuction.id })
+        .pipe(timeout(5000)),
     );
 
     return {
@@ -81,8 +76,8 @@ export class AuctionsService implements OnModuleInit {
       throw new NotFoundException(`Auction with ID ${id} not found`);
     }
 
-    const bids = await firstValueFrom(
-      this.bidsService.findBidsByAuction({ auctionId: id }),
+    const bids: FindBidsByAuctionResponse = await firstValueFrom(
+      this.rabbitClient.send({ cmd: 'get-bids-by-auction' }, { auctionId: id }),
     );
 
     return { ...auction, bids: bids.bids };
@@ -158,8 +153,8 @@ export class AuctionsService implements OnModuleInit {
       );
     }
 
-    const highestBids = await firstValueFrom(
-      this.bidsService.findBidsByAuction({ auctionId: id }),
+    const highestBids: FindBidsByAuctionResponse = await firstValueFrom(
+      this.rabbitClient.send({ cmd: 'get-bids-by-auction' }, { auctionId: id }),
     );
 
     if (!highestBids) {

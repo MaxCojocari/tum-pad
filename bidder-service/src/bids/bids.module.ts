@@ -5,22 +5,20 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Bid } from './entities/bid.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { join } from 'path';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Bid]),
     ClientsModule.registerAsync([
       {
-        name: 'AUCTION_PACKAGE',
+        name: 'AUCTION_SERVICE',
         imports: [ConfigModule],
         inject: [ConfigService],
         useFactory: async (configService: ConfigService) => ({
-          transport: Transport.GRPC,
+          transport: Transport.NATS,
           options: {
-            package: 'auction',
-            protoPath: join(__dirname, '../proto/auction.proto'),
-            url: configService.get<string>('auctionServiceGrpc.url'),
+            servers: ['nats://localhost:4222'],
+            queue: 'transporter_queue',
           },
         }),
       },

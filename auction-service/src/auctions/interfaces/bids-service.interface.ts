@@ -1,5 +1,3 @@
-import { Observable } from 'rxjs';
-
 export interface Bid {
   id: number;
   auctionId: number;
@@ -8,25 +6,18 @@ export interface Bid {
   timestamp: Date;
 }
 
-interface CreateLobbyRequest {
+export interface CreateLobbyRequest {
   auctionId: number;
 }
 
-interface CreateLobbyResponse {
+export interface CreateLobbyResponse {
   message: string;
 }
 
-interface FindBidsByAuctionRequest {
+export interface FindBidsByAuctionRequest {
   auctionId: number;
 }
 
-interface FindBidsByAuctionResponse {
+export interface FindBidsByAuctionResponse {
   bids: Bid[];
-}
-
-export interface BidsServiceGrpc {
-  createLobby(request: CreateLobbyRequest): Observable<CreateLobbyResponse>;
-  findBidsByAuction(
-    request: FindBidsByAuctionRequest,
-  ): Observable<FindBidsByAuctionResponse>;
 }

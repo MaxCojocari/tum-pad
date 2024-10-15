@@ -21,6 +21,15 @@ services:
     volumes:
       - redis-data-registry:/data
 
+  nats:
+    image: nats:latest
+    container_name: nats-server
+    ports:
+      - "4222:4222" # NATS Client Port
+      - "8222:8222" # NATS Monitoring Port
+    environment:
+      - NATS_CLUSTER_ADVERTISE=localhost
+
   postgres-auction:
     image: postgres:17.0
     container_name: db-auction
@@ -53,3 +62,4 @@ services:
 volumes:
   redis-data:
   redis-data-registry:
+  rabbitmq_data:

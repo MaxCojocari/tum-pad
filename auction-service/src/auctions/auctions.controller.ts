@@ -11,7 +11,13 @@ import {
 import { AuctionsService } from './auctions.service';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { UpdateAuctionDto } from './dto/update-auction.dto';
-import { GrpcMethod } from '@nestjs/microservices';
+import {
+  Ctx,
+  GrpcMethod,
+  MessagePattern,
+  Payload,
+  RmqContext,
+} from '@nestjs/microservices';
 import { VerifyAuctionRunningDto } from './dto/verify-auction-running.dto';
 import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 
@@ -24,16 +30,16 @@ export class AuctionsController {
     return this.auctionsService.create(createAuctionDto);
   }
 
-  @UseInterceptors(CacheInterceptor)
-  @CacheKey('auctions')
-  @CacheTTL(10)
+  // @UseInterceptors(CacheInterceptor)
+  // @CacheKey('auctions')
+  // @CacheTTL(10)
   @Get()
   async findAll() {
     return await this.auctionsService.findAll();
   }
 
-  @UseInterceptors(CacheInterceptor)
-  @CacheTTL(10)
+  // @UseInterceptors(CacheInterceptor)
+  // @CacheTTL(10)
   @Get(':id')
   async findOne(@Param('id') id: number) {
     return await this.auctionsService.findOne(id);
@@ -54,8 +60,11 @@ export class AuctionsController {
     return this.auctionsService.remove(id);
   }
 
-  @GrpcMethod('AuctionsService')
-  isAuctionRunning(data: VerifyAuctionRunningDto) {
+  @MessagePattern({ cmd: 'is-auction-running' })
+  isAuctionRunning(
+    @Payload() data: { auctionId: number },
+    @Ctx() context: RmqContext,
+  ) {
     return this.auctionsService.isAuctionRunning(data.auctionId);
   }
 }
