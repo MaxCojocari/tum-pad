@@ -8,6 +8,7 @@ from controllers.bidders import bidders_blueprint
 from controllers.bids import bids_blueprint
 from controllers.lobbies import lobbies_blueprint
 from controllers.service_discovery import service_discovery_blueprint
+from controllers.health import health_blueprint
 from config.configuration import REDIS_HOST, REDIS_PORT, RATE_LIMIT
 
 app = Flask(__name__)
@@ -26,6 +27,7 @@ app.register_blueprint(bidders_blueprint, url_prefix='/bidders')
 app.register_blueprint(bids_blueprint, url_prefix='/bids')
 app.register_blueprint(service_discovery_blueprint, url_prefix='/discovery')
 app.register_blueprint(lobbies_blueprint, url_prefix='/lobbies')
+app.register_blueprint(health_blueprint, url_prefix='/health')
 
 if __name__ == '__main__':
     grpc_thread = threading.Thread(target=grpc_server.serve)
