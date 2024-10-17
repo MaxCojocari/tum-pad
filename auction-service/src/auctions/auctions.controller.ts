@@ -61,10 +61,12 @@ export class AuctionsController {
   }
 
   @MessagePattern({ cmd: 'is-auction-running' })
-  isAuctionRunning(
-    @Payload() data: { auctionId: number },
-    @Ctx() context: RmqContext,
-  ) {
+  isAuctionRunning(@Payload() data: { auctionId: number }) {
     return this.auctionsService.isAuctionRunning(data.auctionId);
+  }
+
+  @MessagePattern({ cmd: 'get-auction' })
+  getAuction(@Payload() data: { auctionId: number }) {
+    return this.auctionsService.findOne(data.auctionId);
   }
 }

@@ -9,6 +9,7 @@ import { HealthModule } from './health/health.module';
 import { BiddersModule } from './bidders/bidders.module';
 import { BidsModule } from './bids/bids.module';
 import { ServiceRegistrationModule } from './service-registration/service-registration.module';
+import { LobbyModule } from './lobby/lobby.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { ServiceRegistrationModule } from './service-registration/service-regist
     BiddersModule,
     BidsModule,
     ServiceRegistrationModule,
+    LobbyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

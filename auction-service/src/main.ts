@@ -13,12 +13,6 @@ async function bootstrap() {
   const host = configService.get<string>('app.host');
   const port = configService.get<number>('app.port');
   const logger = new Logger(NestApplication.name);
-  const rmq = {
-    host: configService.get<string>('rmq.host'),
-    port: configService.get<number>('rmq.port'),
-    user: configService.get<number>('rmq.user'),
-    password: configService.get<number>('rmq.password'),
-  };
 
   app.useGlobalPipes(
     new ValidationPipe({

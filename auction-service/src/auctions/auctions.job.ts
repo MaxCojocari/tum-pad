@@ -14,7 +14,7 @@ export class AuctionsJob {
   constructor(
     @InjectRepository(Auction)
     private readonly auctionRepository: Repository<Auction>,
-    @Inject('BIDDER_SERVICE') private readonly rabbitClient: ClientProxy,
+    @Inject('BIDDER_SERVICE') private readonly natsClient: ClientProxy,
   ) {}
 
   @Cron(CronExpression.EVERY_SECOND)
@@ -41,7 +41,7 @@ export class AuctionsJob {
 
     for (const auction of auctionsToClose) {
       const highestBids: FindBidsByAuctionResponse = await firstValueFrom(
-        this.rabbitClient.send(
+        this.natsClient.send(
           { cmd: 'get-bids-by-auction' },
           { auctionId: auction.id },
         ),

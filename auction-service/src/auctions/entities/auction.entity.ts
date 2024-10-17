@@ -1,7 +1,6 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Item } from './item.entity';
 import { AuctionStatus } from '../interfaces/auction-status.enum';
-import { IsOptional } from 'class-validator';
 
 @Entity()
 export class Auction {

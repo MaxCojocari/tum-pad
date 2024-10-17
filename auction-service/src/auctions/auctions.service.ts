@@ -23,7 +23,7 @@ export class AuctionsService {
     private readonly auctionRepository: Repository<Auction>,
     @InjectRepository(Item)
     private readonly itemRepository: Repository<Item>,
-    @Inject('BIDDER_SERVICE') private readonly rabbitClient: ClientProxy,
+    @Inject('BIDDER_SERVICE') private readonly natsClient: ClientProxy,
   ) {}
 
   async create(createAuctionDto: CreateAuctionDto) {
@@ -51,7 +51,7 @@ export class AuctionsService {
     const savedAuction = await this.auctionRepository.save(auction);
 
     await firstValueFrom(
-      this.rabbitClient
+      this.natsClient
         .send({ cmd: 'create-lobby' }, { auctionId: savedAuction.id })
         .pipe(timeout(5000)),
     );
@@ -77,7 +77,7 @@ export class AuctionsService {
     }
 
     const bids: FindBidsByAuctionResponse = await firstValueFrom(
-      this.rabbitClient.send({ cmd: 'get-bids-by-auction' }, { auctionId: id }),
+      this.natsClient.send({ cmd: 'get-bids-by-auction' }, { auctionId: id }),
     );
 
     return { ...auction, bids: bids.bids };
@@ -154,7 +154,7 @@ export class AuctionsService {
     }
 
     const highestBids: FindBidsByAuctionResponse = await firstValueFrom(
-      this.rabbitClient.send({ cmd: 'get-bids-by-auction' }, { auctionId: id }),
+      this.natsClient.send({ cmd: 'get-bids-by-auction' }, { auctionId: id }),
     );
 
     if (!highestBids) {

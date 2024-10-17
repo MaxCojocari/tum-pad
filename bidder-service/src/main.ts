@@ -5,6 +5,8 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TimeoutInterceptor } from './interceptors/timeout.interceptor';
 import { ServiceRegistrationService } from './service-registration/service-registration.service';
+import { WsAdapter } from '@nestjs/platform-ws';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,12 +14,6 @@ async function bootstrap() {
   const host = configService.get<string>('app.host');
   const port = configService.get<number>('app.port');
   const logger = new Logger(NestApplication.name);
-  const rmq = {
-    host: configService.get<string>('rmq.host'),
-    port: configService.get<number>('rmq.port'),
-    user: configService.get<number>('rmq.user'),
-    password: configService.get<number>('rmq.password'),
-  };
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -39,9 +35,11 @@ async function bootstrap() {
   });
 
   app.useGlobalInterceptors(new TimeoutInterceptor());
+  // app.useWebSocketAdapter(new WsAdapter(app));
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   await app.startAllMicroservices();
-  await app.listen(port);
+  await app.listen(port, '127.0.0.1');
 
   logger.log(`Application is running on: ${await app.getUrl()}`);
 

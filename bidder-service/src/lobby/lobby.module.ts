@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { BidsService } from './bids.service';
-import { BidsController } from './bids.controller';
+import { LobbyService } from './lobby.service';
+import { LobbyGateway } from './lobby.gateway';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Bid } from './entities/bid.entity';
+import { Bid } from '../bids/entities/bid.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { LobbyModule } from '../lobby/lobby.module';
 
 @Module({
   imports: [
@@ -24,9 +23,8 @@ import { LobbyModule } from '../lobby/lobby.module';
         }),
       },
     ]),
-    LobbyModule,
   ],
-  controllers: [BidsController],
-  providers: [BidsService],
+  providers: [LobbyGateway, LobbyService],
+  exports: [LobbyGateway],
 })
-export class BidsModule {}
+export class LobbyModule {}

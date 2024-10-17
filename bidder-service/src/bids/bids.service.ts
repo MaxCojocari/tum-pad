@@ -13,24 +13,24 @@ import { IsAuctionRunningResponse } from './interfaces/auction-service.interface
 import { ClientProxy } from '@nestjs/microservices';
 import * as dayjs from 'dayjs';
 import { firstValueFrom } from 'rxjs';
+import { LobbyGateway } from '../lobby/lobby.gateway';
 
 @Injectable()
 export class BidsService {
   constructor(
     @InjectRepository(Bid)
     private readonly bidsRepository: Repository<Bid>,
-    @Inject('AUCTION_SERVICE') private readonly rabbitClient: ClientProxy,
+    private readonly lobbyWsGateway: LobbyGateway,
+    @Inject('AUCTION_SERVICE') private readonly natsClient: ClientProxy,
   ) {}
 
   async create(createBidDto: CreateBidDto) {
     const isRunning: IsAuctionRunningResponse = await firstValueFrom(
-      this.rabbitClient.send(
+      this.natsClient.send(
         { cmd: 'is-auction-running' },
         { auctionId: createBidDto.auctionId },
       ),
     );
-
-    console.log({ isRunning });
 
     if (!isRunning.running) {
       throw new BadRequestException(
@@ -39,6 +39,8 @@ export class BidsService {
     }
 
     const bid = this.bidsRepository.create(createBidDto);
+    // await this.bidsRepository.save(bid);
+    this.lobbyWsGateway.sendAuctionUpdate(createBidDto.auctionId);
     return this.bidsRepository.save(bid);
   }
 
