@@ -49,11 +49,6 @@ export class BidsController {
     return this.bidsService.remove(id);
   }
 
-  @MessagePattern({ cmd: 'create-lobby' })
-  createLobby(@Payload() data: CreateLobbyDto, @Ctx() context: RmqContext) {
-    return this.bidsService.createLobby(data.auctionId);
-  }
-
   @MessagePattern({ cmd: 'get-bids-by-auction' })
   findBidsByAuction(@Payload() data: CreateLobbyDto) {
     console.log('get-bids-by-auction', data);

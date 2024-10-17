@@ -1,52 +1,54 @@
 import {
-  ConnectedSocket,
-  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
-  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
 import { LobbyService } from './lobby.service';
 import { Server, Socket } from 'socket.io';
 
-@WebSocketGateway()
+@WebSocketGateway({ namespace: /\/auctions\/\d+\/lobby/ })
 export class LobbyGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
   constructor(private readonly lobbyService: LobbyService) {}
 
-  // Handle client connection
-  handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
+  async handleConnection(client: Socket) {
+    const auctionId = this.extractAuctionIdFromNamespace(client.nsp.name);
+    const lobbyInfo = await this.lobbyService.findOne(+auctionId);
+
+    if (!lobbyInfo) {
+      client.emit('error', `Lobby with auction id ${auctionId} not found`);
+      client.disconnect(true);
+      return;
+    }
+
+    if (auctionId) {
+      console.log(
+        `Client ${client.id} connected to auction lobby: ${auctionId}`,
+      );
+      client.join(auctionId);
+      const auctionData = await this.lobbyService.getAuctionData(+auctionId);
+      client.emit('auctionUpdate', auctionData);
+    }
   }
 
-  // Handle client disconnection
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
-  }
-
-  // Join auction lobby
-  @SubscribeMessage('joinAuctionLobby')
-  async handleJoinAuctionLobby(
-    @MessageBody() data: { auctionId: number },
-    @ConnectedSocket() client: Socket,
-  ) {
-    const auctionId = data.auctionId;
-    client.join(auctionId.toString()); // Client joins lobby named after auction ID
-
-    console.log(`Client ${client.id} joined auction lobby: ${auctionId}`);
-
-    // Send initial auction data to the client
-    const auctionData = await this.lobbyService.getAuctionData(auctionId);
-
-    client.emit('auctionUpdate', auctionData);
+    const auctionId = this.extractAuctionIdFromNamespace(client.nsp.name);
+    console.log(
+      `Client ${client.id} disconnected from auction lobby: ${auctionId}`,
+    );
   }
 
   // Broadcast auction updates to all connected clients in the auction lobby
   async sendAuctionUpdate(auctionId: number) {
     const auctionData = await this.lobbyService.getAuctionData(auctionId);
-    console.log('Lobby sendAuctionUpdate', auctionData);
-    this.server.to(auctionId.toString()).emit('auctionUpdate', auctionData); // Broadcast to the auction lobby room
+    // Broadcast to the auction lobby room
+    this.server.to(auctionId.toString()).emit('auctionUpdate', auctionData);
+  }
+
+  private extractAuctionIdFromNamespace(namespace: string): string | null {
+    const match = namespace.match(/\/auctions\/(\d+)\/lobby/);
+    return match ? match[1] : null;
   }
 }

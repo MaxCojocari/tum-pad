@@ -50,7 +50,7 @@ export class AuctionsService {
     });
     const savedAuction = await this.auctionRepository.save(auction);
 
-    await firstValueFrom(
+    const { lobbyWsUrl } = await firstValueFrom(
       this.natsClient
         .send({ cmd: 'create-lobby' }, { auctionId: savedAuction.id })
         .pipe(timeout(5000)),
@@ -58,6 +58,7 @@ export class AuctionsService {
 
     return {
       auctionId: savedAuction.id,
+      lobbyWsUrl,
       message: 'Auction created successfully',
     };
   }

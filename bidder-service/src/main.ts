@@ -5,7 +5,6 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TimeoutInterceptor } from './interceptors/timeout.interceptor';
 import { ServiceRegistrationService } from './service-registration/service-registration.service';
-import { WsAdapter } from '@nestjs/platform-ws';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 
 async function bootstrap() {
@@ -35,7 +34,6 @@ async function bootstrap() {
   });
 
   app.useGlobalInterceptors(new TimeoutInterceptor());
-  // app.useWebSocketAdapter(new WsAdapter(app));
   app.useWebSocketAdapter(new IoAdapter(app));
 
   await app.startAllMicroservices();

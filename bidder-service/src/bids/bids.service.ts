@@ -14,6 +14,8 @@ import { ClientProxy } from '@nestjs/microservices';
 import * as dayjs from 'dayjs';
 import { firstValueFrom } from 'rxjs';
 import { LobbyGateway } from '../lobby/lobby.gateway';
+import { Lobby } from '../lobby/entities/lobby.entity';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class BidsService {
@@ -39,7 +41,6 @@ export class BidsService {
     }
 
     const bid = this.bidsRepository.create(createBidDto);
-    // await this.bidsRepository.save(bid);
     this.lobbyWsGateway.sendAuctionUpdate(createBidDto.auctionId);
     return this.bidsRepository.save(bid);
   }
@@ -81,11 +82,5 @@ export class BidsService {
     const bid = await this.findOne(id);
     await this.bidsRepository.remove(bid);
     return { message: `Bid with ID ${id} removed successfully.` };
-  }
-
-  createLobby(auctionId: number) {
-    console.log(`createLobby ${auctionId}`);
-    // initiate ws connection
-    return { message: 'Ok' };
   }
 }

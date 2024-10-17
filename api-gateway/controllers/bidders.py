@@ -2,11 +2,10 @@ from flask import Blueprint, request, jsonify
 import requests
 from requests.exceptions import Timeout, RequestException
 from services.service_urls import BIDDERS_SERVICE_URL
+from config.configuration import TIMEOUT
 
 bidders_blueprint = Blueprint('bidders', __name__)
 
-# Global timeout value in seconds
-TIMEOUT = 4
 
 def handle_request(method, url, data=None):
     try:

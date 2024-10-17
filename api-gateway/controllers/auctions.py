@@ -2,11 +2,9 @@ from flask import Blueprint, request, jsonify
 import requests
 from requests.exceptions import Timeout, RequestException
 from services.service_urls import AUCTIONS_SERVICE_URL
+from config.configuration import TIMEOUT
 
 auctions_blueprint = Blueprint('auctions', __name__)
-
-# Global timeout value in seconds
-TIMEOUT = 3
 
 def handle_request(method, url, data=None):
     """Helper function to handle HTTP requests."""
