@@ -80,8 +80,11 @@ export class AuctionsService {
     const bids: FindBidsByAuctionResponse = await firstValueFrom(
       this.natsClient.send({ cmd: 'get-bids-by-auction' }, { auctionId: id }),
     );
+    const { lobbyWsUrl } = await firstValueFrom(
+      this.natsClient.send({ cmd: 'get-auction-lobby' }, { auctionId: id }),
+    );
 
-    return { ...auction, bids: bids.bids };
+    return { ...auction, lobbyWsUrl, bids: bids.bids };
   }
 
   async update(id: number, updateAuctionDto: UpdateAuctionDto) {

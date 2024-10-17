@@ -34,7 +34,4 @@ export class Auction {
 
   @Column({ type: 'double precision', nullable: true })
   winningFinalAmount?: number;
-
-  @Column({ nullable: true })
-  lobbyWsUrl: string;
 }

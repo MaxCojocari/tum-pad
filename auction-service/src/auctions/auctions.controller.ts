@@ -34,15 +34,15 @@ export class AuctionsController {
   // @CacheKey('auctions')
   // @CacheTTL(10)
   @Get()
-  async findAll() {
-    return await this.auctionsService.findAll();
+  findAll() {
+    return this.auctionsService.findAll();
   }
 
   // @UseInterceptors(CacheInterceptor)
   // @CacheTTL(10)
   @Get(':id')
-  async findOne(@Param('id') id: number) {
-    return await this.auctionsService.findOne(id);
+  findOne(@Param('id') id: number) {
+    return this.auctionsService.findOne(id);
   }
 
   @Patch(':id')

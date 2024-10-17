@@ -16,4 +16,9 @@ export class LobbyController {
   createLobby(@Payload() data: CreateLobbyDto) {
     return this.lobbyService.createLobby(data.auctionId);
   }
+
+  @MessagePattern({ cmd: 'get-auction-lobby' })
+  findLobby(@Payload() data: CreateLobbyDto) {
+    return this.lobbyService.findOne(data.auctionId);
+  }
 }
