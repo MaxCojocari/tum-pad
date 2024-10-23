@@ -3,7 +3,7 @@ from grpc_server import get_service_urls, get_all_service_urls
 
 service_discovery_blueprint = Blueprint('service_discovery', __name__)
 
-@service_discovery_blueprint.route('/service/<service_name>', methods=['GET'])
+@service_discovery_blueprint.route('/<service_name>', methods=['GET'])
 def get_registered_service(service_name):
     """Route to retrieve service URL from the registry with error handling"""
     try:
@@ -17,7 +17,7 @@ def get_registered_service(service_name):
     except Exception as e:
         return jsonify({'error': 'Internal server error', 'message': str(e)}), 500
 
-@service_discovery_blueprint.route('/services', methods=['GET'])
+@service_discovery_blueprint.route('/', methods=['GET'])
 def get_registered_services():
     """Route to retrieve URLs for all services from the registry with error handling"""
     try:
