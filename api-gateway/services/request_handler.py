@@ -1,11 +1,9 @@
-import time
-import json
 import requests
 from requests.exceptions import Timeout, RequestException
 import pybreaker
 from flask import jsonify
 from config.configuration import TIMEOUT
-from services.redis_service import redis_client
+from store.replicas import *
 
 # Define the service replicas and their current state (load for Variant 2)
 # service_replicas = [
@@ -19,48 +17,24 @@ breaker = pybreaker.CircuitBreaker(fail_max=3, reset_timeout=TIMEOUT * 3.5)
 
 current_replica_index = -1
 
-def get_service_replicas(variant=1):
-    replicas_data = []
-    
-    if variant == 1:
-        value = redis_client.get('auction-service')
-    elif variant == 2:
-        value = redis_client.get('bidder-service')
-
-    if value:
-        replicas = json.loads(value)
-        
-        for replica in replicas:
-            replicas_data.append({
-                "url": f"http://{replica['host']}:{replica['port']}",
-                "load": 0 
-            })
-
-    return replicas_data
-
-def fetch_current_replicas():
-    service_replicas_auction_service = get_service_replicas(variant=1)
-    service_replicas_bidder_service = get_service_replicas(variant=2)
-
 def get_round_robin_service(service_replicas):
     global current_replica_index
     current_replica_index = (current_replica_index + 1) % len(service_replicas)
     return service_replicas[current_replica_index]
 
 def get_least_loaded_service(service_replicas):
-    active_services = [service for service in service_replicas if service['active']]
-    if not active_services:
+    if not service_replicas:
         return None
-    return min(active_services, key=lambda service: service['load'])
+    return min(service_replicas, key=lambda service: service['load'])
 
 def handle_request(method, route, data=None, variant=1):
     """
     Handle HTTP requests with flexible Load Balancing and Circuit Breaker logic.
     """
     if variant == 1:
-        selected_service = get_round_robin_service(service_replicas_auction_service)
+        selected_service = get_round_robin_service(auction_service_replicas)
     elif variant == 2:
-        selected_service = get_least_loaded_service(service_replicas_bidder_service)
+        selected_service = get_least_loaded_service(bidder_service_replicas)
         
     if not selected_service:
         return jsonify({'error': 'No available services to handle the request'}), 503

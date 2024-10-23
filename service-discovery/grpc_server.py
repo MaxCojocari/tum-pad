@@ -26,10 +26,12 @@ class ServiceRegistryServicer(service_registry_pb2_grpc.ServiceRegistryServicer)
             existing_services.append(new_service_info)
             redis_client.set(request.serviceName, json.dumps(existing_services))  # Update Redis with the new list
             message = f"{request.serviceName} registered successfully"
-            success = True
         else:
             message = f"Service {request.serviceName} with host {request.host} and port {request.port} is already registered"
-            success = True
+        
+        success = True
+        
+        redis_client.publish(request.serviceName, json.dumps(new_service_info))
 
         return service_registry_pb2.RegisterResponse(
             success=success,

@@ -8,6 +8,7 @@ from controllers.lobbies import lobbies_blueprint
 from controllers.ping import ping_blueprint
 from controllers.health import health_blueprint
 from config.configuration import REDIS_HOST, REDIS_PORT, RATE_LIMIT, APP_PORT
+from services.replicas_handler import subscribe_to_service_registration_events, load_service_replicas
 
 app = Flask(__name__)
 
@@ -28,4 +29,6 @@ app.register_blueprint(ping_blueprint, url_prefix='/ping')
 app.register_blueprint(health_blueprint, url_prefix='/health')
 
 if __name__ == '__main__':
+    subscribe_to_service_registration_events()
+    load_service_replicas()
     app.run(host='0.0.0.0', port=APP_PORT)

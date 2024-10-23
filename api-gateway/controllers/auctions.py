@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from utils.handle_request import handle_request
+from services.request_handler import handle_request
 from services.service_urls import AUCTIONS_SERVICE_URL
 
 auctions_blueprint = Blueprint('auctions', __name__)

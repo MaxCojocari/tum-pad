@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from utils.handle_request import handle_request
+from services.request_handler import handle_request
 from services.service_urls import BIDDERS_SERVICE_URL
 
 bids_blueprint = Blueprint('bids', __name__)
