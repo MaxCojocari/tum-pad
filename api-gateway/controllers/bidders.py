@@ -1,35 +1,34 @@
 from flask import Blueprint, request
 from services.request_handler import handle_request
-from services.service_urls import BIDDERS_SERVICE_URL
 
 bidders_blueprint = Blueprint('bidders', __name__)
 
 @bidders_blueprint.route('/', methods=['POST'])
 def create_bidder():
     data = request.json
-    return handle_request('POST', f'{BIDDERS_SERVICE_URL}/bidders', data)
+    return handle_request('POST', '/bidders', data, variant=2)
 
 @bidders_blueprint.route('/', methods=['GET'])
 def get_all_bidders():
-    return handle_request('GET', f'{BIDDERS_SERVICE_URL}/bidders')
+    return handle_request('GET', '/bidders', variant=2)
 
 @bidders_blueprint.route('/<int:id>', methods=['GET'])
 def get_bidder(id):
-    return handle_request('GET', f'{BIDDERS_SERVICE_URL}/bidders/{id}')
+    return handle_request('GET', f'/bidders/{id}', variant=2)
 
 @bidders_blueprint.route('/<int:id>/bids', methods=['GET'])
 def get_bids_by_bidder(id):
-    return handle_request('GET', f'{BIDDERS_SERVICE_URL}/bidders/{id}/bids')
+    return handle_request('GET', f'/bidders/{id}/bids', variant=2)
 
 @bidders_blueprint.route('/<int:id>', methods=['PATCH'])
 def update_bidder(id):
     data = request.json
-    return handle_request('PATCH', f'{BIDDERS_SERVICE_URL}/bidders/{id}', data)
+    return handle_request('PATCH', f'/bidders/{id}', data, variant=2)
 
 @bidders_blueprint.route('/<int:id>', methods=['DELETE'])
 def remove_bidder(id):
-    return handle_request('DELETE', f'{BIDDERS_SERVICE_URL}/bidders/{id}')
+    return handle_request('DELETE', f'/bidders/{id}', variant=2)
 
 @bidders_blueprint.route('/timeout', methods=['GET'])
 def test_timeout():
-    return handle_request('GET', f'{BIDDERS_SERVICE_URL}/timeout')
+    return handle_request('GET', '/timeout', variant=2)

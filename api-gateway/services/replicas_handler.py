@@ -46,7 +46,8 @@ def append_new_replica(replicas, message):
     if not any(replica["url"] == new_replica["url"] for replica in replicas):
         replicas.append(new_replica)
     
-def remove_service_replica(service_name, url):    
+def remove_service_replica(service_name, url):  
+    global auction_service_replicas, bidder_service_replicas
     parsed_url = urlparse(url)
     host = parsed_url.hostname
     port = parsed_url.port
@@ -56,12 +57,16 @@ def remove_service_replica(service_name, url):
     redis_client.set(service_name, json.dumps(filtered_replicas_info))
     
     if service_name == 'auction-service':
-        auction_service_replicas = [info for info in auction_service_replicas if info['url'] != url]
+        for info in auction_service_replicas:
+            if info['url'] == url:
+                auction_service_replicas.remove(info)
+                break
+
     elif service_name == 'bidder-service':
-        bidder_service_replicas = [info for info in bidder_service_replicas if info['url'] != url]
-        
-    print('auction_service_replicas', auction_service_replicas)
-    print('bidder_service_replicas', bidder_service_replicas)
+        for info in bidder_service_replicas:
+            if info['url'] == url:
+                bidder_service_replicas.remove(info)
+                break
 
 def subscribe_to_service_registration_events():
     pubsub = redis_client.pubsub()

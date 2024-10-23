@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from grpc_server import get_service_urls, get_all_service_urls
+from services.retrieval_service import get_service_urls, get_all_service_urls
 
 service_discovery_blueprint = Blueprint('service_discovery', __name__)
 

@@ -7,10 +7,16 @@ import * as dayjs from 'dayjs';
 
 @Controller()
 export class AppController {
+  private readonly host: string;
+  private readonly port: number;
+
   constructor(
     private readonly appService: AppService,
     private readonly configService: ConfigService,
-  ) {}
+  ) {
+    this.host = this.configService.get<string>('app.host');
+    this.port = this.configService.get<number>('app.port');
+  }
 
   @Get()
   getHello(): string {
@@ -24,20 +30,29 @@ export class AppController {
 
   @Get('/ping')
   getPing() {
-    const host = this.configService.get<string>('app.host');
-    const port = this.configService.get<string>('app.port');
+    const now = dayjs().add(3, 'hour').toISOString();
+    return {
+      message: `Pong from instance ${this.host}:${this.port}`,
+      timestamp: now,
+    };
+  }
+
+  @Get('/ping-with-errors')
+  getPingWithErrors() {
     const shouldFail = faker.datatype.boolean();
     const now = dayjs().add(3, 'hour').toISOString();
 
+    console.log(`Pinged instance ${this.host}:${this.port}`);
+
     if (shouldFail) {
       throw new HttpException(
-        `Service ${host}:${port} failed!`,
+        `Service ${this.host}:${this.port} failed!`,
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
 
     return {
-      message: `Pong from instance ${host}:${port}`,
+      message: `Pong from instance ${this.host}:${this.port}`,
       timestamp: now,
     };
   }

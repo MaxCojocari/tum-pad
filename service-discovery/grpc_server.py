@@ -38,23 +38,6 @@ class ServiceRegistryServicer(service_registry_pb2_grpc.ServiceRegistryServicer)
             message=message
         )
 
-def get_service_urls(service_name):    
-    services_json = redis_client.get(service_name)
-    
-    if services_json:
-        return json.loads(services_json)
-    return None
-
-def get_all_service_urls():
-    service_keys = redis_client.keys('*-service')
-
-    service_data = {}
-    for key in service_keys:
-        value = redis_client.get(key)
-        service_data[key] = json.loads(value)
-    
-    return service_data
-
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     service_registry_pb2_grpc.add_ServiceRegistryServicer_to_server(ServiceRegistryServicer(), server)

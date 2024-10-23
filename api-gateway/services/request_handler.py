@@ -1,19 +1,13 @@
+import time
 import requests
 from requests.exceptions import Timeout, RequestException
-import pybreaker
 from flask import jsonify
-from config.configuration import TIMEOUT
+from config.configuration import TIMEOUT, FAIL_MAX
 from store.replicas import *
+import pybreaker
+from services.replicas_handler import remove_service_replica
 
-# Define the service replicas and their current state (load for Variant 2)
-# service_replicas = [
-#     {'url': 'http://service-replica-1:5000', 'load': 0, 'active': True},
-#     {'url': 'http://service-replica-2:5000', 'load': 0, 'active': True},
-#     {'url': 'http://service-replica-3:5000', 'load': 0, 'active': True},
-#     {'url': 'http://service-replica-4:5000', 'load': 0, 'active': True}
-# ]
-
-breaker = pybreaker.CircuitBreaker(fail_max=3, reset_timeout=TIMEOUT * 3.5)
+breaker = pybreaker.CircuitBreaker(fail_max=FAIL_MAX, reset_timeout=10)
 
 current_replica_index = -1
 
@@ -39,29 +33,27 @@ def handle_request(method, route, data=None, variant=1):
     if not selected_service:
         return jsonify({'error': 'No available services to handle the request'}), 503
 
-    service_url = selected_service['url']
+    service_url = selected_service['url'] + route
 
     try:
-        if variant == 2:
-            selected_service['load'] += 1
+        selected_service['load'] += 1
 
         if method == 'GET':
-            response = breaker.call(requests.get, service_url + route, timeout=TIMEOUT)
+            response = get(service_url, retry_attempts=FAIL_MAX, timeout=TIMEOUT)
         elif method == 'POST':
-            response = breaker.call(requests.post, service_url + route, json=data, timeout=TIMEOUT)
+            response = post(service_url, json=data, retry_attempts=FAIL_MAX, timeout=TIMEOUT)
         elif method == 'PATCH':
-            response = breaker.call(requests.patch, service_url + route, json=data, timeout=TIMEOUT)
+            response = patch(service_url, json=data, retry_attempts=FAIL_MAX, timeout=TIMEOUT)
         elif method == 'DELETE':
-            response = breaker.call(requests.delete, service_url + route, timeout=TIMEOUT)
-
-        if variant == 2:
-            selected_service['load'] -= 1
+            response = delete(service_url, retry_attempts=FAIL_MAX, timeout=TIMEOUT)
+        
+        selected_service['load'] -= 1
 
         return jsonify(response.json()), response.status_code
 
     except pybreaker.CircuitBreakerError:
         if variant == 2:
-            selected_service['active'] = False
+            remove_service_replica('bidder-service', service_url)
         return jsonify({'error': 'Circuit breaker is open. Service temporarily unavailable.'}), 503
     except Timeout:
         if variant == 2:
@@ -71,3 +63,60 @@ def handle_request(method, route, data=None, variant=1):
         if variant == 2:
             selected_service['load'] -= 1
         return jsonify({'error': str(e)}), 500
+  
+@breaker  
+def get(url, retry_attempts=3, timeout=TIMEOUT, retry_backoff=1):
+    for attempt in range(retry_attempts):
+        try:
+            response = requests.get(url, timeout=timeout)
+            response.raise_for_status()
+            return response
+        except Exception as e:
+            print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
+            time.sleep(retry_backoff)
+        
+    breaker.open()
+    raise pybreaker.CircuitBreakerError()
+
+@breaker  
+def post(url, data, retry_attempts=3, timeout=TIMEOUT, retry_backoff=1):
+    for attempt in range(retry_attempts):
+        try:
+            response = requests.post(url, json=data, timeout=timeout)
+            response.raise_for_status()
+            return response
+        except Exception as e:
+            print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
+            time.sleep(retry_backoff)
+        
+    breaker.open()
+    raise pybreaker.CircuitBreakerError()
+
+@breaker  
+def patch(url, data, retry_attempts=3, timeout=TIMEOUT, retry_backoff=1):
+    for attempt in range(retry_attempts):
+        try:
+            response = requests.patch(url, json=data, timeout=TIMEOUT)
+            response.raise_for_status()
+            return response
+        except Exception as e:
+            print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
+            time.sleep(retry_backoff)
+        
+    breaker.open()
+    raise pybreaker.CircuitBreakerError()
+
+@breaker  
+def delete(url, retry_attempts=3, timeout=TIMEOUT, retry_backoff=1):
+    for attempt in range(retry_attempts):
+        try:
+            response = requests.delete(url, timeout=timeout)
+            response.raise_for_status()
+            return response
+        except Exception as e:
+            print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
+            time.sleep(retry_backoff)
+        
+    breaker.open()
+    raise pybreaker.CircuitBreakerError()
+    
