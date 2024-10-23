@@ -1,13 +1,9 @@
-import os
 import grpc
 import json
 from services.redis_service import redis_client
 from concurrent import futures
 from proto import service_registry_pb2_grpc, service_registry_pb2
-from dotenv import load_dotenv
-
-load_dotenv()
-GRPC_PORT = os.getenv('GRPC_PORT')
+from config.configuration import GRPC_PORT
 
 # python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. proto/service_registry.proto
 

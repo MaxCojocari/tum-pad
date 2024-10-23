@@ -5,3 +5,4 @@ python-dotenv==1.0.1
 grpcio==1.60.0
 grpcio-tools==1.60.0
 redis==5.1.1
+pybreaker==1.2.0

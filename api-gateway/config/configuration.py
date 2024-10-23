@@ -5,6 +5,6 @@ load_dotenv()
 
 REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = os.getenv('REDIS_PORT')
-# Global timeout value in seconds
-TIMEOUT = 6
-RATE_LIMIT="100 per minute"
+GRPC_PORT = os.getenv('GRPC_PORT')
+TIMEOUT = 6 # seconds
+RATE_LIMIT = "100 per minute"
