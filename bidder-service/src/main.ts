@@ -12,6 +12,11 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const host = configService.get<string>('app.host');
   const port = configService.get<number>('app.port');
+  const reqTimeout = configService.get<number>('app.reqTimeout');
+  const nats = {
+    host: configService.get<string>('nats.host'),
+    port: configService.get<number>('nats.port'),
+  };
   const logger = new Logger(NestApplication.name);
 
   app.useGlobalPipes(
@@ -28,12 +33,12 @@ async function bootstrap() {
   app.connectMicroservice({
     transport: Transport.NATS,
     options: {
-      servers: ['nats://localhost:4222'],
+      servers: [`nats://${nats.host}:${nats.port}`],
       queue: 'transporter_queue',
     },
   });
 
-  app.useGlobalInterceptors(new TimeoutInterceptor());
+  app.useGlobalInterceptors(new TimeoutInterceptor(reqTimeout));
   app.useWebSocketAdapter(new IoAdapter(app));
 
   await app.startAllMicroservices();

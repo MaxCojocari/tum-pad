@@ -7,6 +7,7 @@ from store.replicas import *
 import pybreaker
 from services.replicas_handler import remove_service_replica
 from services.redis_service import redis_client
+from urllib.parse import urlparse
 
 breaker = pybreaker.CircuitBreaker(fail_max=FAIL_MAX, reset_timeout=10)
 
@@ -41,26 +42,61 @@ def track_requests_over_interval(service_name, interval=MONITORING_TIME_INTERVAL
     if request_count > critical_load:
         print(f"ALERT: Critical load reached for {service_name}: {request_count} requests in the last {MONITORING_TIME_INTERVAL} seconds!")
 
+def inc_req_replica(url):
+    parsed_url = urlparse(url)
+    host = parsed_url.hostname
+    port = parsed_url.port
+    redis_key = f"{host}_{port}_load"
+    redis_client.incr(redis_key)
+
+def dec_req_replica(url):
+    parsed_url = urlparse(url)
+    host = parsed_url.hostname
+    port = parsed_url.port
+    redis_key = f"{host}_{port}_load"
+    redis_client.decr(redis_key)
 
 def get_round_robin_service(service_replicas):
     global current_replica_index
     current_replica_index = (current_replica_index + 1) % len(service_replicas)
-    return service_replicas[current_replica_index]
+    return {"url": service_replicas[current_replica_index]}
 
 def get_least_loaded_service(service_replicas):
     if not service_replicas:
         return None
-    return min(service_replicas, key=lambda service: service['load'])
+    
+    replica_info = []
+    
+    for url in service_replicas:
+        parsed_url = urlparse(url)
+        host = parsed_url.hostname
+        port = parsed_url.port
+        redis_key = f"{host}_{port}_load"
+        load = redis_client.get(redis_key) or 0
+        replica_info.append({
+            "url": f"http://{host}:{port}",
+            "load": int(load)
+        })
+    
+    return min(replica_info, key=lambda service: service['load'])
 
-def handle_request(method, route, data=None, variant=1):
+def get_service(load_balancer, replicas):
+    if load_balancer == "round_robin":
+        selected_service = get_round_robin_service(replicas)
+    elif load_balancer == "least_load":
+        selected_service = get_least_loaded_service(replicas) 
+    
+    return selected_service  
+
+def handle_request(method, route, data=None, variant=1, load_balancer="round_robin"):
     """
     Handle HTTP requests with flexible Load Balancing and Circuit Breaker logic.
     """
     if variant == 1:
-        selected_service = get_round_robin_service(auction_service_replicas)
+        selected_service = get_service(load_balancer, auction_service_replicas)
         service_name = 'auction-service'
     elif variant == 2:
-        selected_service = get_least_loaded_service(bidder_service_replicas)
+        selected_service = get_service(load_balancer, bidder_service_replicas)
         service_name = 'bidder-service'
         
     if not selected_service:
@@ -71,7 +107,7 @@ def handle_request(method, route, data=None, variant=1):
     track_requests_over_interval(service_name=service_name)
     
     try:
-        selected_service['load'] += 1
+        # inc_req_replica(selected_service['url'])
 
         if method == 'GET':
             response = get(service_url, retry_attempts=FAIL_MAX, timeout=REQ_TIMEOUT)
@@ -82,29 +118,29 @@ def handle_request(method, route, data=None, variant=1):
         elif method == 'DELETE':
             response = delete(service_url, retry_attempts=FAIL_MAX, timeout=REQ_TIMEOUT)
         
-        selected_service['load'] -= 1
+        # dec_req_replica(selected_service['url'])
 
         return jsonify(response.json()), response.status_code
 
     except pybreaker.CircuitBreakerError:
         if variant == 2:
-            remove_service_replica('bidder-service', service_url)
+            remove_service_replica('bidder-service', selected_service['url'])
         return jsonify({'error': 'Circuit breaker is open. Service temporarily unavailable.'}), 503
     except Timeout:
-        if variant == 2:
-            selected_service['load'] -= 1
+        dec_req_replica(selected_service['url'])
         return jsonify({'error': 'Request to service timed out'}), 504
     except RequestException as e:
-        if variant == 2:
-            selected_service['load'] -= 1
+        dec_req_replica(selected_service['url'])
         return jsonify({'error': str(e)}), 500
   
 @breaker  
 def get(url, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
     for attempt in range(retry_attempts):
         try:
+            inc_req_replica(url)
             response = requests.get(url, timeout=timeout)
             response.raise_for_status()
+            dec_req_replica(url)
             return response
         except Exception as e:
             print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
@@ -114,11 +150,13 @@ def get(url, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
     raise pybreaker.CircuitBreakerError()
 
 @breaker  
-def post(url, data, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
+def post(url, json, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
     for attempt in range(retry_attempts):
         try:
-            response = requests.post(url, json=data, timeout=timeout)
+            inc_req_replica(url)
+            response = requests.post(url, json=json, timeout=timeout)
             response.raise_for_status()
+            dec_req_replica(url)
             return response
         except Exception as e:
             print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
@@ -128,11 +166,13 @@ def post(url, data, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
     raise pybreaker.CircuitBreakerError()
 
 @breaker  
-def patch(url, data, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
+def patch(url, json, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
     for attempt in range(retry_attempts):
         try:
-            response = requests.patch(url, json=data, timeout=timeout)
+            inc_req_replica(url)
+            response = requests.patch(url, json=json, timeout=timeout)
             response.raise_for_status()
+            dec_req_replica(url)
             return response
         except Exception as e:
             print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
@@ -145,8 +185,10 @@ def patch(url, data, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
 def delete(url, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
     for attempt in range(retry_attempts):
         try:
+            inc_req_replica(url)
             response = requests.delete(url, timeout=timeout)
             response.raise_for_status()
+            dec_req_replica(url)
             return response
         except Exception as e:
             print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")

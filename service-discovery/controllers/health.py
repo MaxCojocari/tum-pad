@@ -21,7 +21,3 @@ def health_discovery():
         return jsonify(response), 500
     else:
         return jsonify(response), 200
-
-@health_blueprint.route('/global', methods=['GET'])
-def health_all_services():
-    return jsonify(get)

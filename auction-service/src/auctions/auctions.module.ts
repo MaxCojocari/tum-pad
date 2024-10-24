@@ -6,18 +6,24 @@ import { Auction } from './entities/auction.entity';
 import { Item } from './entities/item.entity';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AuctionsJob } from './auctions.job';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Auction, Item]),
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: 'BIDDER_SERVICE',
-        transport: Transport.NATS,
-        options: {
-          servers: ['nats://localhost:4222'],
-          queue: 'transporter_queue',
-        },
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.NATS,
+          options: {
+            servers: [
+              `nats://${configService.get<string>('nats.host')}:${configService.get<string>('nats.port')}`,
+            ],
+            queue: 'transporter_queue',
+          },
+        }),
+        inject: [ConfigService],
       },
     ]),
   ],

@@ -51,7 +51,6 @@ export class BidsController {
 
   @MessagePattern({ cmd: 'get-bids-by-auction' })
   findBidsByAuction(@Payload() data: CreateLobbyDto) {
-    console.log('get-bids-by-auction', data);
     return this.bidsService.findBidsByAuction(data.auctionId);
   }
 }

@@ -4,9 +4,34 @@ from urllib.parse import urlparse
 from store.replicas import *
 
 def get_service_replicas():
+    auction_replica_total_info = []
+    bidder_replica_total_info = []
+    
+    for url in auction_service_replicas:
+        parsed_url = urlparse(url)
+        host = parsed_url.hostname
+        port = parsed_url.port
+        redis_key = f"{host}_{port}_load"
+        load = redis_client.get(redis_key) or 0
+        auction_replica_total_info.append({
+            "url": f"http://{host}:{port}",
+            "load": int(load)
+        })
+
+    for url in bidder_service_replicas:
+        parsed_url = urlparse(url)
+        host = parsed_url.hostname
+        port = parsed_url.port
+        redis_key = f"{host}_{port}_load"
+        load = redis_client.get(redis_key) or 0
+        bidder_replica_total_info.append({
+            "url": f"http://{host}:{port}",
+            "load": int(load)
+        })
+    
     return {
-        'auction-service': auction_service_replicas,
-        'bidder-service': bidder_service_replicas
+        'auction-service': auction_replica_total_info,
+        'bidder-service': bidder_replica_total_info
     }
   
 def load_service_replicas():
@@ -17,15 +42,9 @@ def load_service_replicas():
             replicas = json.loads(value)
             for replica in replicas:
                 if service == 'auction-service':                    
-                    auction_service_replicas.append({
-                        "url": f"http://{replica['host']}:{replica['port']}",
-                        "load": 0 
-                    })
+                    auction_service_replicas.append(f"http://{replica['host']}:{replica['port']}")
                 elif service == 'bidder-service':
-                    bidder_service_replicas.append({
-                        "url": f"http://{replica['host']}:{replica['port']}",
-                        "load": 0 
-                    })
+                    bidder_service_replicas.append(f"http://{replica['host']}:{replica['port']}")
 
 def handle_auction_service_register_message(message):
     append_new_replica(auction_service_replicas, message=message)
@@ -38,13 +57,13 @@ def append_new_replica(replicas, message):
     host = parsed_msg.get('host')
     port = parsed_msg.get('port')
     
-    new_replica = {
-        "url": f"http://{host}:{port}",
-        "load": 0
-    }
-    
-    if not any(replica["url"] == new_replica["url"] for replica in replicas):
+    new_replica = f"http://{host}:{port}"
+
+    if not any(replica == new_replica for replica in replicas):
         replicas.append(new_replica)
+    
+    redis_key = f"{host}_{port}_load"
+    redis_client.expire(redis_key, 0)
     
 def remove_service_replica(service_name, url):  
     global auction_service_replicas, bidder_service_replicas
@@ -57,16 +76,13 @@ def remove_service_replica(service_name, url):
     redis_client.set(service_name, json.dumps(filtered_replicas_info))
     
     if service_name == 'auction-service':
-        for info in auction_service_replicas:
-            if info['url'] == url:
-                auction_service_replicas.remove(info)
-                break
+        auction_service_replicas.remove(url)
 
     elif service_name == 'bidder-service':
-        for info in bidder_service_replicas:
-            if info['url'] == url:
-                bidder_service_replicas.remove(info)
-                break
+        bidder_service_replicas.remove(url)
+        
+    redis_key = f"{host}_{port}_load"
+    redis_client.delete(redis_key)
 
 def subscribe_to_service_registration_events():
     pubsub = redis_client.pubsub()

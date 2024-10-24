@@ -4,6 +4,7 @@ export default () => ({
     host: process.env.APP_HOST,
     port: +process.env.APP_PORT,
     grpcUrl: process.env.APP_GRPC_URL,
+    reqTimeout: +process.env.APP_REQ_TIMEOUT,
   },
   database: {
     host: process.env.POSTGRES_HOST,
@@ -18,5 +19,9 @@ export default () => ({
   },
   serviceRegistryGrpc: {
     url: process.env.SERVICE_REGISTRY_GRPC_URL,
+  },
+  nats: {
+    host: process.env.NATS_HOST,
+    port: +process.env.NATS_PORT || 4222,
   },
 });

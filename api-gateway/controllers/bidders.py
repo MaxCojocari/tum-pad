@@ -1,5 +1,7 @@
-from flask import Blueprint, request
-from services.request_handler import handle_request
+from flask import Blueprint, request, jsonify
+from services.request_handler import handle_request, get_least_loaded_service
+from store.replicas import bidder_service_replicas
+import requests
 
 bidders_blueprint = Blueprint('bidders', __name__)
 
@@ -32,3 +34,15 @@ def remove_bidder(id):
 @bidders_blueprint.route('/timeout', methods=['GET'])
 def test_timeout():
     return handle_request('GET', '/timeout', variant=2)
+
+@bidders_blueprint.route('/simulate-load', methods=['GET'])
+def ping_bidder_service():
+
+    selected_service = get_least_loaded_service(bidder_service_replicas)
+        
+    if not selected_service:
+        return jsonify({'error': 'No available services to handle the request'}), 503
+    
+    response = requests.get(selected_service['url'] + '/timeout', timeout=10)
+
+    return jsonify(response.json()), response.status_code
