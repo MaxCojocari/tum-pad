@@ -32,7 +32,7 @@ app.register_blueprint(ping_with_errors_blueprint, url_prefix='/ping-with-errors
 app.register_blueprint(health_blueprint, url_prefix='/health')
 app.register_blueprint(loads_blueprint, url_prefix='/services/loads')
 
-if __name__ == '__main__':
+if __name__ == '__main__':    
     subscribe_to_service_registration_events()
     load_service_replicas()
     app.run(host='0.0.0.0', port=APP_PORT)

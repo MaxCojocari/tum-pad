@@ -5,7 +5,7 @@ import pybreaker
 from flask import jsonify
 
 # Configuration: timeout, retry attempts, backoff delay
-TIMEOUT = 10  # Timeout for each request in seconds
+REQ_TIMEOUT = 10  # Timeout for each request in seconds
 RETRY_ATTEMPTS = 3  # Number of times to retry the request if it fails
 BACKOFF_DELAY = 2  # Delay between retries (in seconds)
 CRITICAL_THRESHOLD = 3  # Circuit breaker failure threshold
@@ -18,7 +18,7 @@ service_replicas = [
 ]
 
 # Circuit breaker for both variants
-breaker = pybreaker.CircuitBreaker(fail_max=CRITICAL_THRESHOLD, reset_timeout=TIMEOUT * 3.5)
+breaker = pybreaker.CircuitBreaker(fail_max=CRITICAL_THRESHOLD, reset_timeout=REQ_TIMEOUT * 3.5)
 
 # Function to get the next service in round-robin
 current_replica_index = -1
@@ -63,13 +63,13 @@ def handle_request(method, url, data=None, variant='variant1'):
     try:
         # Retry logic: Call the service with retries, using the circuit breaker for protection
         if method == 'GET':
-            response = breaker.call(retry_request, requests.get, service_url, retries=RETRY_ATTEMPTS, backoff=BACKOFF_DELAY, timeout=TIMEOUT)
+            response = breaker.call(retry_request, requests.get, service_url, retries=RETRY_ATTEMPTS, backoff=BACKOFF_DELAY, timeout=REQ_TIMEOUT)
         elif method == 'POST':
-            response = breaker.call(retry_request, requests.post, service_url, json=data, retries=RETRY_ATTEMPTS, backoff=BACKOFF_DELAY, timeout=TIMEOUT)
+            response = breaker.call(retry_request, requests.post, service_url, json=data, retries=RETRY_ATTEMPTS, backoff=BACKOFF_DELAY, timeout=REQ_TIMEOUT)
         elif method == 'PATCH':
-            response = breaker.call(retry_request, requests.patch, service_url, json=data, retries=RETRY_ATTEMPTS, backoff=BACKOFF_DELAY, timeout=TIMEOUT)
+            response = breaker.call(retry_request, requests.patch, service_url, json=data, retries=RETRY_ATTEMPTS, backoff=BACKOFF_DELAY, timeout=REQ_TIMEOUT)
         elif method == 'DELETE':
-            response = breaker.call(retry_request, requests.delete, service_url, retries=RETRY_ATTEMPTS, backoff=BACKOFF_DELAY, timeout=TIMEOUT)
+            response = breaker.call(retry_request, requests.delete, service_url, retries=RETRY_ATTEMPTS, backoff=BACKOFF_DELAY, timeout=REQ_TIMEOUT)
 
         return jsonify(response.json()), response.status_code
 
