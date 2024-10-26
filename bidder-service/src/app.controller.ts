@@ -31,6 +31,9 @@ export class AppController {
   @Get('/ping')
   getPing() {
     const now = dayjs().add(3, 'hour').toISOString();
+
+    console.log(`Pong from instance ${this.host}:${this.port}`);
+
     return {
       message: `Pong from instance ${this.host}:${this.port}`,
       timestamp: now,
@@ -39,21 +42,11 @@ export class AppController {
 
   @Get('/ping-with-errors')
   getPingWithErrors() {
-    const shouldFail = faker.datatype.boolean();
-    const now = dayjs().add(3, 'hour').toISOString();
+    console.log(`Pinged with error instance ${this.host}:${this.port}`);
 
-    console.log(`Pinged instance ${this.host}:${this.port}`);
-
-    if (shouldFail) {
-      throw new HttpException(
-        `Service ${this.host}:${this.port} failed!`,
-        HttpStatus.SERVICE_UNAVAILABLE,
-      );
-    }
-
-    return {
-      message: `Pong from instance ${this.host}:${this.port}`,
-      timestamp: now,
-    };
+    throw new HttpException(
+      `Service ${this.host}:${this.port} failed!`,
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
   }
 }
