@@ -3,6 +3,7 @@ import { BidsController } from './bids.controller';
 import { BidsService } from './bids.service';
 import { CreateBidDto } from './dto/create-bid.dto';
 import { UpdateBidDto } from './dto/update-bid.dto';
+import { NotFoundException } from '@nestjs/common';
 
 const mockBidsService = () => ({
   create: jest.fn(),
@@ -10,7 +11,6 @@ const mockBidsService = () => ({
   findOne: jest.fn(),
   update: jest.fn(),
   remove: jest.fn(),
-  createLobby: jest.fn(),
   findBidsByAuction: jest.fn(),
 });
 
@@ -72,6 +72,14 @@ describe('BidsController', () => {
       expect(service.findOne).toHaveBeenCalledWith(1);
       expect(result).toEqual(bid);
     });
+
+    it('should throw NotFoundException if the bid does not exist', async () => {
+      service.findOne.mockRejectedValueOnce(
+        new NotFoundException('Bid not found'),
+      );
+
+      await expect(controller.findOne(999)).rejects.toThrow(NotFoundException);
+    });
   });
 
   describe('update', () => {
@@ -99,18 +107,13 @@ describe('BidsController', () => {
       expect(service.remove).toHaveBeenCalledWith(1);
       expect(result).toEqual(removeMessage);
     });
-  });
 
-  describe('createLobby', () => {
-    it('should call bidsService.createLobby with the correct auctionId', async () => {
-      const auctionId = 1;
+    it('should throw NotFoundException if the bid does not exist', async () => {
+      service.remove.mockRejectedValueOnce(
+        new NotFoundException('Bid not found'),
+      );
 
-      service.createLobby.mockReturnValueOnce({ message: 'Ok' });
-
-      const result = controller.createLobby({ auctionId });
-
-      expect(service.createLobby).toHaveBeenCalledWith(auctionId);
-      expect(result).toEqual({ message: 'Ok' });
+      await expect(controller.remove(999)).rejects.toThrow(NotFoundException);
     });
   });
 

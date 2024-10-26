@@ -15,6 +15,7 @@ def health_discovery():
     response = {
         'status': 'running',
         'redis_status': redis_status,
+        'service_name': 'service-discovery'
     }
 
     if redis_status == 'disconnected':

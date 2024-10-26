@@ -2,12 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BidsService } from './bids.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ClientGrpc } from '@nestjs/microservices';
-import { NotFoundException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateBidDto } from './dto/create-bid.dto';
 import { UpdateBidDto } from './dto/update-bid.dto';
 import { of } from 'rxjs';
 import { Bid } from './entities/bid.entity';
+import { LobbyGateway } from '../lobby/lobby.gateway';
+import * as dayjs from 'dayjs';
 
 const mockBidsRepository = () => ({
   create: jest.fn(),
@@ -17,26 +19,27 @@ const mockBidsRepository = () => ({
   remove: jest.fn(),
 });
 
-const mockAuctionsServiceGrpc = () => ({
-  isAuctionRunning: jest.fn(),
+const mockClientProxy = () => ({
+  send: jest.fn(),
 });
 
-const mockClientGrpc = () => ({
-  getService: jest.fn(() => mockAuctionsServiceGrpc()),
+const mockLobbyGateway = () => ({
+  sendAuctionUpdate: jest.fn(),
 });
 
 describe('BidsService', () => {
   let service: BidsService;
   let bidsRepository: jest.Mocked<Repository<Bid>>;
-  let auctionsService: jest.Mocked<any>;
-  let clientGrpc: jest.Mocked<ClientGrpc>;
+  let natsClient: jest.Mocked<ClientProxy>;
+  let lobbyGateway: jest.Mocked<LobbyGateway>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BidsService,
         { provide: getRepositoryToken(Bid), useFactory: mockBidsRepository },
-        { provide: 'AUCTION_SERVICE', useFactory: mockClientGrpc },
+        { provide: 'AUCTION_SERVICE', useFactory: mockClientProxy },
+        { provide: LobbyGateway, useFactory: mockLobbyGateway },
       ],
     }).compile();
 
@@ -44,11 +47,8 @@ describe('BidsService', () => {
     bidsRepository = module.get<jest.Mocked<Repository<Bid>>>(
       getRepositoryToken(Bid),
     );
-    clientGrpc = module.get<ClientGrpc>('AUCTION_SERVICE') as any;
-
-    auctionsService = clientGrpc.getService('AuctionsService');
-
-    service.onModuleInit();
+    natsClient = module.get<ClientProxy>('AUCTION_SERVICE') as any;
+    lobbyGateway = module.get<LobbyGateway>(LobbyGateway) as any;
   });
 
   it('should be defined', () => {
@@ -56,21 +56,23 @@ describe('BidsService', () => {
   });
 
   describe('create', () => {
-    it('should throw an exception if the auction is not running', async () => {
+    it('should throw BadRequestException if the auction is not running', async () => {
       const createBidDto: CreateBidDto = {
         auctionId: 1,
         bidderId: 2,
         amount: 100,
       };
 
-      auctionsService.isAuctionRunning.mockReturnValueOnce(
-        of({ running: false }),
-      );
+      natsClient.send.mockReturnValueOnce(of({ running: false }));
 
-      await expect(service.create(createBidDto)).rejects.toThrow();
+      await expect(service.create(createBidDto)).rejects.toThrow(
+        new BadRequestException(
+          `Auction with id ${createBidDto.auctionId} is not running.`,
+        ),
+      );
     });
 
-    it('should save a bid if the auction is running', async () => {
+    it('should save a bid if the auction is running and update the lobby', async () => {
       const createBidDto: CreateBidDto = {
         auctionId: 1,
         bidderId: 2,
@@ -78,14 +80,18 @@ describe('BidsService', () => {
       };
       const createdBid = { id: 1, ...createBidDto };
 
-      auctionsService.isAuctionRunning.mockReturnValueOnce(
-        of({ running: true }),
-      );
+      natsClient.send.mockReturnValueOnce(of({ running: true }));
       bidsRepository.create.mockReturnValue(createdBid as any);
       bidsRepository.save.mockResolvedValue(createdBid as any);
 
-      expect(bidsRepository.create);
-      expect(bidsRepository.save);
+      const result = await service.create(createBidDto);
+
+      expect(bidsRepository.create).toHaveBeenCalledWith(createBidDto);
+      expect(bidsRepository.save).toHaveBeenCalledWith(createdBid);
+      expect(lobbyGateway.sendAuctionUpdate).toHaveBeenCalledWith(
+        createBidDto.auctionId,
+      );
+      expect(result).toEqual(createdBid);
     });
   });
 
@@ -102,7 +108,7 @@ describe('BidsService', () => {
   });
 
   describe('findBidsByAuction', () => {
-    it('should return bids by auction id, sorted by amount in descending order', async () => {
+    it('should return bids by auction id, sorted by amount in descending order with ISO timestamps', async () => {
       const auctionId = 1;
       const bids = [
         { id: 1, auctionId, bidderId: 1, amount: 100, timestamp: new Date() },
@@ -117,7 +123,12 @@ describe('BidsService', () => {
         where: { auctionId },
         order: { amount: 'DESC' },
       });
-      expect(result);
+      expect(result.bids).toHaveLength(bids.length);
+      result.bids.forEach((bid, index) => {
+        expect(bid.timestamp).toBe(
+          dayjs(bids[index].timestamp).add(3, 'hours').toISOString(),
+        );
+      });
     });
   });
 

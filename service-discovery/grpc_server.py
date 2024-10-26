@@ -9,6 +9,9 @@ from config.configuration import GRPC_PORT
 
 class ServiceRegistryServicer(service_registry_pb2_grpc.ServiceRegistryServicer):
     def Register(self, request, context):
+        peer = context.peer()  # ipv4:127.0.0.1:12345
+        client_ip = peer.split(":")[1]
+        
         existing_services_json = redis_client.get(request.serviceName)
         
         if existing_services_json:
@@ -18,13 +21,13 @@ class ServiceRegistryServicer(service_registry_pb2_grpc.ServiceRegistryServicer)
             existing_services = []
 
         new_service_info = {
-            'host': request.host,
+            'host': client_ip,
             'port': request.port
         }
 
         if new_service_info not in existing_services:
             existing_services.append(new_service_info)
-            redis_client.set(request.serviceName, json.dumps(existing_services), 0)  # Update Redis with the new list
+            redis_client.set(request.serviceName, json.dumps(existing_services))
             message = f"{request.serviceName} registered successfully"
         else:
             message = f"Service {request.serviceName} with host {request.host} and port {request.port} is already registered"

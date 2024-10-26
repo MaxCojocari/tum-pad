@@ -24,6 +24,7 @@ export class BidsService {
     private readonly bidsRepository: Repository<Bid>,
     private readonly lobbyWsGateway: LobbyGateway,
     @Inject('AUCTION_SERVICE') private readonly natsClient: ClientProxy,
+    // @Inject('BIDDER_SERVICE') private readonly natsClientWs: ClientProxy,
   ) {}
 
   async create(createBidDto: CreateBidDto) {
@@ -41,6 +42,7 @@ export class BidsService {
     }
 
     const bid = this.bidsRepository.create(createBidDto);
+
     this.lobbyWsGateway.sendAuctionUpdate(createBidDto.auctionId);
     return this.bidsRepository.save(bid);
   }

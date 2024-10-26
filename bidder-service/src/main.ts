@@ -40,9 +40,10 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new TimeoutInterceptor(reqTimeout));
   app.useWebSocketAdapter(new IoAdapter(app));
+  app.enableCors();
 
   await app.startAllMicroservices();
-  await app.listen(port, '127.0.0.1');
+  await app.listen(port, '0.0.0.0');
 
   logger.log(`Application is running on: ${await app.getUrl()}`);
 

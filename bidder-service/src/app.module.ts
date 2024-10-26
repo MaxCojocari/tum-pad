@@ -49,6 +49,7 @@ export class AppModule {
       username: this.configService.get<string>('database.user'),
       password: this.configService.get<string>('database.password'),
       database: this.configService.get<string>('database.db'),
+      grpcUrl: this.configService.get<string>('serviceRegistryGrpc.url'),
     });
   }
 }

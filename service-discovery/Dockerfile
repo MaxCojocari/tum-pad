@@ -12,15 +12,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code
 COPY . .
 
-# Expose port 5000 to the outside world (or whichever port Flask is set to run on)
-EXPOSE 5000
+# Ensure that the .env file is available for reading
+COPY .env.local .env.local
 
 # Set environment variables for Flask
 ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
-
-# Ensure that the .env file is available for reading
-COPY .env.local .env.local
+ENV PYTHONUNBUFFERED=1
 
 # Run the Flask application
-CMD ["flask", "run"]
+CMD ["python3", "app.py"]

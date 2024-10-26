@@ -7,25 +7,31 @@ def get_service_replicas():
     auction_replica_total_info = []
     bidder_replica_total_info = []
     
-    for url in auction_service_replicas:
-        parsed_url = urlparse(url)
-        host = parsed_url.hostname
-        port = parsed_url.port
-        redis_key = f"{host}_{port}_load"
+    auction_service_replicas_local = []
+    bidder_service_replicas_local = []
+    
+    json_auction_service_replicas_local = redis_client.get('auction-service')
+    json_bidder_service_replicas_local = redis_client.get('bidder-service')
+    
+    if json_auction_service_replicas_local:
+        auction_service_replicas_local = json.loads(json_auction_service_replicas_local)
+
+    if json_bidder_service_replicas_local:
+        bidder_service_replicas_local = json.loads(json_bidder_service_replicas_local)
+    
+    for data in auction_service_replicas_local:
+        redis_key = f"{data['host']}_{data['port']}_load"
         load = redis_client.get(redis_key) or 0
         auction_replica_total_info.append({
-            "url": f"http://{host}:{port}",
+            "url": f"http://{data['host']}:{data['port']}",
             "load": int(load)
         })
 
-    for url in bidder_service_replicas:
-        parsed_url = urlparse(url)
-        host = parsed_url.hostname
-        port = parsed_url.port
-        redis_key = f"{host}_{port}_load"
+    for data in bidder_service_replicas_local:
+        redis_key = f"{data['host']}_{data['port']}_load"
         load = redis_client.get(redis_key) or 0
         bidder_replica_total_info.append({
-            "url": f"http://{host}:{port}",
+            "url": f"http://{data['host']}:{data['port']}",
             "load": int(load)
         })
     

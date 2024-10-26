@@ -107,8 +107,6 @@ def handle_request(method, route, data=None, variant=1, load_balancer="round_rob
     track_requests_over_interval(service_name=service_name)
     
     try:
-        # inc_req_replica(selected_service['url'])
-
         if method == 'GET':
             response = get(service_url, retry_attempts=FAIL_MAX, timeout=REQ_TIMEOUT)
         elif method == 'POST':
@@ -118,7 +116,11 @@ def handle_request(method, route, data=None, variant=1, load_balancer="round_rob
         elif method == 'DELETE':
             response = delete(service_url, retry_attempts=FAIL_MAX, timeout=REQ_TIMEOUT)
         
-        # dec_req_replica(selected_service['url'])
+        if response.status_code == 408:
+            return jsonify({'error': 'Request to service timed out'}), 504
+        
+        if response.status_code < 500 and response.status_code >= 400:
+            response.raise_for_status()
 
         return jsonify(response.json()), response.status_code
 
@@ -126,74 +128,100 @@ def handle_request(method, route, data=None, variant=1, load_balancer="round_rob
         if variant == 2:
             remove_service_replica('bidder-service', selected_service['url'])
         return jsonify({'error': 'Circuit breaker is open. Service temporarily unavailable.'}), 503
-    except Timeout:
-        dec_req_replica(selected_service['url'])
-        return jsonify({'error': 'Request to service timed out'}), 504
     except RequestException as e:
         dec_req_replica(selected_service['url'])
         return jsonify({'error': str(e)}), 500
   
 @breaker  
 def get(url, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
+    response = None
     for attempt in range(retry_attempts):
-        try:
+        try:            
             inc_req_replica(url)
             response = requests.get(url, timeout=timeout)
-            response.raise_for_status()
+            
+            if response.status_code >= 500:
+                response.raise_for_status()
+            
             dec_req_replica(url)
             return response
+        
         except Exception as e:
             print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
             time.sleep(retry_backoff)
-        
+
+    if response.status_code < 500 and response.status_code >= 400:
+        return response
+
     breaker.open()
     raise pybreaker.CircuitBreakerError()
 
 @breaker  
 def post(url, json, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
+    response = None
     for attempt in range(retry_attempts):
         try:
             inc_req_replica(url)
             response = requests.post(url, json=json, timeout=timeout)
-            response.raise_for_status()
+            
+            if response.status_code >= 500:
+                response.raise_for_status()
+            
             dec_req_replica(url)
             return response
         except Exception as e:
             print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
             time.sleep(retry_backoff)
+     
+    if response.status_code < 500 and response.status_code >= 400:
+        return response
         
     breaker.open()
     raise pybreaker.CircuitBreakerError()
 
 @breaker  
 def patch(url, json, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
+    response = None
     for attempt in range(retry_attempts):
         try:
             inc_req_replica(url)
             response = requests.patch(url, json=json, timeout=timeout)
-            response.raise_for_status()
+            
+            if response.status_code >= 500:
+                response.raise_for_status()
+            
             dec_req_replica(url)
             return response
         except Exception as e:
             print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
             time.sleep(retry_backoff)
-        
+
+    if response.status_code < 500 and response.status_code >= 400:
+        return response
+
     breaker.open()
     raise pybreaker.CircuitBreakerError()
 
 @breaker  
 def delete(url, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
+    response = None
     for attempt in range(retry_attempts):
         try:
             inc_req_replica(url)
             response = requests.delete(url, timeout=timeout)
-            response.raise_for_status()
+            
+            if response.status_code >= 500:
+                response.raise_for_status()
+            
             dec_req_replica(url)
             return response
         except Exception as e:
             print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
             time.sleep(retry_backoff)
-        
+
+    if response.status_code < 500 and response.status_code >= 400:
+        return response
+
     breaker.open()
     raise pybreaker.CircuitBreakerError()
     

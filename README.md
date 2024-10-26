@@ -552,10 +552,10 @@ Each custom service is defined with its own **Dockerfile**, ensuring that depend
 
 Horizontal scaling will be applied, allowing multiple instances of each service to be deployed for load balancing and better performance.
 
-All services are managed through a single `docker-compose.yml` file, simplifying configuration and communication. To deploy and scale the services, I will use:
+All services are managed through docker-compose files, simplifying configuration and communication. To deploy and scale the services, I will use:
 
 ```shell
-docker-compose up -d --build
+docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
 This builds each service from its Dockerfile and launches them in detached mode with horizontal scaling.

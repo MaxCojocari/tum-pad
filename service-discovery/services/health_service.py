@@ -10,9 +10,9 @@ def check_health():
     service_data = get_all_service_urls()
     for replica_name, replicas in service_data.items():
         for replica in replicas:
-            url = f"http://{replica['host']}:{replica['port']}/health"
+            url = f"http://{replica['host']}:{replica['port']}"
             try:
-                response = requests.get(url, timeout=5)
+                response = requests.get(url + "/health", timeout=5)
                 response.raise_for_status()
             except Exception as e:
                 print(f"ALERT: {replica_name} at {url} is unhealthy! Error: {e}")

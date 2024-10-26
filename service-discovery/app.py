@@ -19,5 +19,4 @@ if __name__ == '__main__':
     healthcheck_thread = threading.Thread(target=run_health_checker)
     healthcheck_thread.daemon = True
     healthcheck_thread.start()
-
     app.run(host='0.0.0.0', port=APP_PORT)

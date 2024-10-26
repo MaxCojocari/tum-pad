@@ -1,7 +1,7 @@
 services:
-  redis:
+  redis-auction:
     image: redis:6.2-alpine
-    container_name: redis
+    container_name: redis-auction
     restart: always
     ports:
       - "6379:6379"
@@ -10,9 +10,9 @@ services:
     env_file:
       - ./auction-service/.env.local
 
-  redis-registry:
+  redis-gateway-registry:
     image: redis:6.2-alpine
-    container_name: redis-registry
+    container_name: redis-gateway-registry
     restart: always
     ports:
       - "6380:6379"
@@ -89,15 +89,41 @@ services:
       context: ./auction-service
       target: run
 
-  bidder-service:
-    container_name: bidder-service
+  bidder-service-1:
+    container_name: bidder-service-1
     restart: always
     env_file:
       - ./bidder-service/.env.local
     environment:
-      - APP_PORT=3003
+      - APP_PORT=7000
     ports:
-      - "3003:3003"
+      - "7000:7000"
+    build:
+      context: ./bidder-service
+      target: run
+
+  bidder-service-2:
+    container_name: bidder-service-2
+    restart: always
+    env_file:
+      - ./bidder-service/.env.local
+    environment:
+      - APP_PORT=7001
+    ports:
+      - "7001:7001"
+    build:
+      context: ./bidder-service
+      target: run
+
+  bidder-service-3:
+    container_name: bidder-service-3
+    restart: always
+    env_file:
+      - ./bidder-service/.env.local
+    environment:
+      - APP_PORT=7002
+    ports:
+      - "7002:7002"
     build:
       context: ./bidder-service
       target: run
@@ -106,10 +132,28 @@ services:
     container_name: api-gateway
     build:
       context: ./api-gateway
-    ports:
-      - "5000:5000"
     env_file:
       - ./api-gateway/.env.local
+    ports:
+      - "5000:5000"
+
+  service-discovery:
+    container_name: service-discovery
+    build:
+      context: ./service-discovery
+    env_file:
+      - ./service-discovery/.env.local
+    ports:
+      - "5001:5001"
+
+  nats:
+    image: nats:latest
+    container_name: nats-server
+    ports:
+      - "4222:4222" # NATS Client Port
+      - "8222:8222" # NATS Monitoring Port
+    environment:
+      - NATS_CLUSTER_ADVERTISE=localhost
 
 volumes:
   redis-data:

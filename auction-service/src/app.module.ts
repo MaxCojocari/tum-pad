@@ -64,6 +64,7 @@ export class AppModule {
       database: this.configService.get<string>('database.db'),
       redisHost: this.configService.get<string>('redis.host'),
       redisPort: this.configService.get<string>('redis.port'),
+      grpcUrl: this.configService.get<string>('serviceRegistryGrpc.url'),
     });
   }
 }

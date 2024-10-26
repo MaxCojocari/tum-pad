@@ -166,8 +166,10 @@ export class AuctionsService {
     }
 
     auction.status = AuctionStatus.CLOSED;
-    auction.winnerId = highestBids.bids[0].bidderId;
-    auction.winningFinalAmount = highestBids.bids[0].amount;
+    if (highestBids.bids && highestBids.bids.length > 0) {
+      auction.winnerId = highestBids.bids[0].bidderId;
+      auction.winningFinalAmount = highestBids.bids[0].amount;
+    }
 
     await this.auctionRepository.save(auction);
 
