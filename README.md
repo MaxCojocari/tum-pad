@@ -85,17 +85,25 @@ This will reattempt the service registration.
 
 ### 3. Run Tests
 
-To execute unit tests, navigate to the `./bidder-service` directory and run:
+Beforehand, navigate to the `./bidder-service` directory and install necessary dependencies:
+
+```shell
+npm install
+```
+
+To execute unit tests, run:
+
+```shell
+npm run test
+```
 
 ### 4. Looby Connectivity
 
 To connect to an auction lobby, first obtain the connection URL. You can get this URL either when an auction is created via `POST /auction` or by retrieving an auction's details with `GET /auctions/{auction_id}`.
 
-For example:
+For example, via `GET /auctions/1` endpoint:
 
 ```json
-GET /auctions/{auction_id}
-
 {
   "id": 1,
   "name": "Magic Apple Auction",
@@ -436,7 +444,21 @@ Inter-service communication:
     ]
     ```
 
-6.  `PATCH /bidders/{bidder_id}` - update bidder record.
+6.  `GET /lobbies` - retrieve lobbies' info
+
+    Response (JSON):
+
+    ```json
+    [
+      {
+        "id": "integer",
+        "auctionId": "integer",
+        "lobbyWsUrl": "string"
+      }
+    ]
+    ```
+
+7.  `PATCH /bidders/{bidder_id}` - update bidder record.
 
     Request (JSON):
 
@@ -458,7 +480,7 @@ Inter-service communication:
     }
     ```
 
-7.  `PATCH /bids/{bid_id}` - update bidder record.
+8.  `PATCH /bids/{bid_id}` - update bidder record.
 
     Request (JSON):
 
@@ -482,7 +504,7 @@ Inter-service communication:
     }
     ```
 
-8.  `DELETE /bidders/{bidder_id}` - delete a specific bidder
+9.  `DELETE /bidders/{bidder_id}` - delete a specific bidder
 
     Response:
 
@@ -492,32 +514,13 @@ Inter-service communication:
     }
     ```
 
-9.  `DELETE /bids/{bid_id}` - delete a specific bid
+10. `DELETE /bids/{bid_id}` - delete a specific bid
 
     Response:
 
     ```json
     {
       "message": "Bid with ID {bid_id} removed successfully."
-    }
-    ```
-
-10. `WebSocket /auctions/{auction_id}/lobby` - join an auction lobby for real-time updates on auction progress.
-
-    Message Sent to Client (JSON):
-
-    ```json
-    {
-      "auctionId": "integer",
-      "bids": [
-        {
-          "bidderId": "integer",
-          "bidPrice": "double",
-          "timestamp": "string"
-        }
-      ],
-      "remainingTime": "string",
-      "status": "enum"
     }
     ```
 
@@ -539,6 +542,25 @@ Inter-service communication:
           "status": "up"
         }
       }
+    }
+    ```
+
+12. `WebSocket /auctions/{auction_id}/lobby` - join an auction lobby for real-time updates on auction progress.
+
+    Message Sent to Client (JSON):
+
+    ```json
+    {
+      "auctionId": "integer",
+      "bids": [
+        {
+          "bidderId": "integer",
+          "bidPrice": "double",
+          "timestamp": "string"
+        }
+      ],
+      "remainingTime": "string",
+      "status": "enum"
     }
     ```
 
