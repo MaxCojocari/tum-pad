@@ -14,8 +14,6 @@ import { ClientProxy } from '@nestjs/microservices';
 import * as dayjs from 'dayjs';
 import { firstValueFrom } from 'rxjs';
 import { LobbyGateway } from '../lobby/lobby.gateway';
-import { Lobby } from '../lobby/entities/lobby.entity';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class BidsService {
@@ -24,7 +22,6 @@ export class BidsService {
     private readonly bidsRepository: Repository<Bid>,
     private readonly lobbyWsGateway: LobbyGateway,
     @Inject('AUCTION_SERVICE') private readonly natsClient: ClientProxy,
-    // @Inject('BIDDER_SERVICE') private readonly natsClientWs: ClientProxy,
   ) {}
 
   async create(createBidDto: CreateBidDto) {
@@ -44,7 +41,12 @@ export class BidsService {
     const bid = this.bidsRepository.create(createBidDto);
 
     this.lobbyWsGateway.sendAuctionUpdate(createBidDto.auctionId);
-    return this.bidsRepository.save(bid);
+    await this.bidsRepository.save(bid);
+
+    return {
+      ...bid,
+      message: 'Bid placed successfully',
+    };
   }
 
   findAll() {
@@ -77,7 +79,8 @@ export class BidsService {
   async update(id: number, updateBidDto: UpdateBidDto) {
     const bid = await this.findOne(id);
     Object.assign(bid, updateBidDto);
-    return this.bidsRepository.save(bid);
+    await this.bidsRepository.save(bid);
+    return { ...bid, message: `Bid with ID ${id} updated successfully.` };
   }
 
   async remove(id: number) {

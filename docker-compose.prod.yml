@@ -52,81 +52,87 @@ services:
 
   auction-service-1:
     container_name: auction-service-1
+    image: tum-pad-auction-service
     restart: always
     env_file:
       - ./auction-service/.env.local
     environment:
       - APP_PORT=3000
+    depends_on:
+      service-discovery:
+        condition: service_started
     ports:
       - "3000:3000"
-    build:
-      context: ./auction-service
-      target: run
 
   auction-service-2:
     container_name: auction-service-2
+    image: tum-pad-auction-service
     restart: always
     env_file:
       - ./auction-service/.env.local
     environment:
       - APP_PORT=3001
+    depends_on:
+      service-discovery:
+        condition: service_started
     ports:
       - "3001:3001"
-    build:
-      context: ./auction-service
-      target: run
 
   auction-service-3:
     container_name: auction-service-3
+    image: tum-pad-auction-service
     restart: always
     env_file:
       - ./auction-service/.env.local
     environment:
       - APP_PORT=3002
+    depends_on:
+      service-discovery:
+        condition: service_started
     ports:
       - "3002:3002"
-    build:
-      context: ./auction-service
-      target: run
 
   bidder-service-1:
     container_name: bidder-service-1
+    image: tum-pad-bidder-service
     restart: always
     env_file:
       - ./bidder-service/.env.local
     environment:
       - APP_PORT=7000
+    depends_on:
+      service-discovery:
+        condition: service_started
     ports:
       - "7000:7000"
-    build:
-      context: ./bidder-service
-      target: run
 
   bidder-service-2:
     container_name: bidder-service-2
+    image: tum-pad-bidder-service
     restart: always
     env_file:
       - ./bidder-service/.env.local
     environment:
       - APP_PORT=7001
+    depends_on:
+      service-discovery:
+        condition: service_started
     ports:
       - "7001:7001"
-    build:
-      context: ./bidder-service
-      target: run
 
   bidder-service-3:
     container_name: bidder-service-3
+    image: tum-pad-bidder-service
     restart: always
     env_file:
       - ./bidder-service/.env.local
     environment:
       - APP_PORT=7002
+    depends_on:
+      service-discovery:
+        condition: service_started
     ports:
       - "7002:7002"
-    build:
-      context: ./bidder-service
-      target: run
 
   api-gateway:
     container_name: api-gateway
@@ -134,6 +140,9 @@ services:
       context: ./api-gateway
     env_file:
       - ./api-gateway/.env.local
+    depends_on:
+      service-discovery:
+        condition: service_started
     ports:
       - "5000:5000"
 
@@ -150,8 +159,8 @@ services:
     image: nats:latest
     container_name: nats-server
     ports:
-      - "4222:4222" # NATS Client Port
-      - "8222:8222" # NATS Monitoring Port
+      - "4222:4222"
+      - "8222:8222"
     environment:
       - NATS_CLUSTER_ADVERTISE=localhost
 

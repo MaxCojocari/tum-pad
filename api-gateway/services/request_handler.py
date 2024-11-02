@@ -129,8 +129,7 @@ def handle_request(method, route, data=None, variant=1, load_balancer="round_rob
             remove_service_replica('bidder-service', selected_service['url'])
         return jsonify({'error': 'Circuit breaker is open. Service temporarily unavailable.'}), 503
     except RequestException as e:
-        dec_req_replica(selected_service['url'])
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': str(e), 'data': response.json()}), 500
   
 @breaker  
 def get(url, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):

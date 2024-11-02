@@ -9,5 +9,3 @@ REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = os.getenv('REDIS_PORT')
 GRPC_PORT = os.getenv('GRPC_PORT')
 HEALTH_CHECK_INTERVAL = int(os.getenv('HEALTH_CHECK_INTERVAL'))
-
-print('APP_PORT', APP_PORT)

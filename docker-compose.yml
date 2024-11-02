@@ -25,8 +25,8 @@ services:
     image: nats:latest
     container_name: nats-server
     ports:
-      - "4222:4222" # NATS Client Port
-      - "8222:8222" # NATS Monitoring Port
+      - "4222:4222"
+      - "8222:8222"
     environment:
       - NATS_CLUSTER_ADVERTISE=localhost
 
@@ -52,6 +52,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4:8.12
+    container_name: pgadmin
     ports:
       - "8080:80"
     volumes:

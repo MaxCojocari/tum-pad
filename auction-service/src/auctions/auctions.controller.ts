@@ -11,14 +11,7 @@ import {
 import { AuctionsService } from './auctions.service';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { UpdateAuctionDto } from './dto/update-auction.dto';
-import {
-  Ctx,
-  GrpcMethod,
-  MessagePattern,
-  Payload,
-  RmqContext,
-} from '@nestjs/microservices';
-import { VerifyAuctionRunningDto } from './dto/verify-auction-running.dto';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('auctions')

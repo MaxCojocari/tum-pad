@@ -10,19 +10,104 @@ The growing demand for bidding platform in online marketplaces, competitive pric
 
 Implementation through distributed systems is necessary due to following reasons:
 
-- **Scalability**: Microservices allow key components, like bid processing, to scale independently during traffic spikes, especially near auction endings.
-
-- **Modularity**: By decoupling functions like bidding and auctions handling into separate services, we enhance maintainability and enable teams to work independently.
-
-- **Maintainability**: Microservices reduce the complexity of maintaining large monolithic bidding system by breaking entities into smaller, focused services.
-
-- **Deployment & Fault Isolation**: Failures in one service don't affect others. Services can be updated or deployed separately for faster development without disrupting the entire system.
+- Scalability
+- Modularity
+- Maintainability
+- Deployment & Fault Isolation
 
 ### Real-world example: eBay
 
 eBay's bidding platform lets sellers list items and buyers place bids. Transitioning to microservices enabled them to handle high bid volumes, support millions of users, and maintain the system with ease.
 
-## Service Boundaries
+## Setup & Run
+
+### 1. Configure Environment Variables
+
+For each service, follow these steps to set up environment variables:
+
+1. In the root folder of each service, locate the `.env.example` file (e.g., `./auction-service/.env.example`).
+2. Create a new file named `.env.local` in the same directory.
+3. Copy the contents of `.env.example` into `.env.local` and fill in the required parameters.
+
+Example for Auction Service (`./auction-service/.env.local`):
+
+```shell
+POSTGRES_USER=your_db_username
+POSTGRES_PASSWORD=your_db_password
+POSTGRES_HOST=db-auction
+POSTGRES_PORT=5432
+POSTGRES_DB=auction_service
+REDIS_HOST=redis-auction
+REDIS_PORT=6379
+APP_HOST=localhost
+APP_PORT=3000
+APP_REQ_TIMEOUT=5000
+SERVICE_REGISTRY_GRPC_URL=service-discovery:50051
+NATS_HOST=nats-server
+NATS_PORT=4222
+```
+
+Repeat this for all services. Only change parameters marked with `...` if necessary. Adjusting these fields may require updates to `docker-compose.prod.yml`.
+
+### 2. Run the Project
+
+To start the project with Docker Compose, use the `run.sh` script:
+
+1. Grant execution permission to `run.sh`:
+
+```shell
+chmod +x run.sh
+```
+
+2. Run the script:
+
+```shell
+./run.sh
+```
+
+This script builds the Docker images, starts the containers, and registers the Auction and Bidder services in Service Discovery.
+
+If service registration does not complete, you can use `restart.sh` to repeat the process:
+
+1. Grant execution permission to `restart.sh`:
+
+```shell
+chmod +x restart.sh
+```
+
+2. Run the script:
+
+```shell
+./restart.sh
+```
+
+This will reattempt the service registration.
+
+### 3. Run Tests
+
+To execute unit tests, navigate to the `./bidder-service` directory and run:
+
+### 4. Looby Connectivity
+
+To connect to an auction lobby, first obtain the connection URL. You can get this URL either when an auction is created via `POST /auction` or by retrieving an auction's details with `GET /auctions/{auction_id}`.
+
+For example:
+
+```json
+GET /auctions/{auction_id}
+
+{
+  "id": 1,
+  "name": "Magic Apple Auction",
+  ...
+  "lobbyWsUrl": "ws://localhost:7002/auctions/1/lobby",
+  ...
+}
+```
+
+Copy the `lobbyWsUrl` and use it to initialize your client connection. Upon connecting for the first time, you should receive an `auctionUpdate` message, indicating a successful connection. From there, you will continue to receive auction updates seamlessly.
+
+## System Design
 
 ![alt text](./system_design.png)
 
@@ -54,7 +139,7 @@ eBay's bidding platform lets sellers list items and buyers place bids. Transitio
         </tr>
         <tr>
             <td>API Gateway</td>
-            <td rowspan=2>Flask (Python) + Nginx + Consul</td>
+            <td rowspan=2>Flask (Python)</td>
         </tr>
         <tr>
             <td>Service Discovery</td>
@@ -62,126 +147,152 @@ eBay's bidding platform lets sellers list items and buyers place bids. Transitio
     </tbody>
 </table>
 
-- Inter-service communication: RESTful APIs over HTTP/1.1, gRPC (proto) over HTTP/2;
+Inter-service communication:
+
+- API gateway - services: RESTful APIs over HTTP/1.1
+- Service discovery - services: HTTP/1.1, gRPC over HTTP/2;
 - User-lobby communication: WebSocket over TCP.
+- Auction Service - Bidder Service: Request/Response with NATS as message broker
+- API gateway - service discovery: Pub/Sub with Redis as message broker
 
 ## Data Management
 
 ### Data Models
 
-#### Auction Table
+#### Auction
 
-| Name         | Type   | Description                                            |
-| ------------ | ------ | ------------------------------------------------------ |
-| auction_id   | UUID   | Unique ID for the auction (PK)                         |
-| auction_name | String | Name of the auction                                    |
-| seller_id    | UUID   | ID of the seller                                       |
-| status       | Enum   | Status of the auction (`CREATED`, `RUNNING`, `CLOSED`) |
+| Name              | Type    | Description                                            |
+| ----------------- | ------- | ------------------------------------------------------ |
+| id                | integer | Unique ID for the auction (PK)                         |
+| name              | string  | Name of the auction                                    |
+| sellerId          | integer | ID of the seller (FK)                                  |
+| startTimestamp    | string  | Auction start time                                     |
+| endTimestamp      | string  | Auction end time                                       |
+| status            | enum    | Status of the auction (`CREATED`, `RUNNING`, `CLOSED`) |
+| winnerId          | integer | ID of the winner                                       |
+| winnerFinalAmount | double  | Winning bid amount                                     |
 
-#### Item Table
+#### Item
 
-| Name          | Type    | Description                               |
-| ------------- | ------- | ----------------------------------------- |
-| item_id       | UUID    | Unique ID for the item (PK)               |
-| auction_id    | UUID    | ID of the auction (FK)                    |
-| name          | String  | Name of the item                          |
-| reserve_price | Decimal | Minimum price required to win the auction |
-| currency      | String  | Currency used for the auction             |
+| Name         | Type    | Description                               |
+| ------------ | ------- | ----------------------------------------- |
+| id           | integer | Unique ID for the item (PK)               |
+| name         | string  | Item name                                 |
+| reservePrice | double  | Minimum price required to win the auction |
+| currency     | string  | Currency used for the auction             |
 
-#### Bid Table
+#### Bid
 
-| Name       | Type      | Description                                     |
-| ---------- | --------- | ----------------------------------------------- |
-| bid_id     | UUID      | Unique ID for the bid (PK)                      |
-| auction_id | UUID      | ID of the auction where the bid was placed (FK) |
-| bidder_id  | UUID      | ID of the bidder (FK)                           |
-| amount     | Decimal   | The bid amount                                  |
-| timestamp  | Timestamp | Time when the bid was placed                    |
+| Name      | Type      | Description                                     |
+| --------- | --------- | ----------------------------------------------- |
+| id        | integer   | Unique ID for the bid (PK)                      |
+| auctionId | integer   | ID of the auction where the bid was placed (FK) |
+| bidderId  | integer   | ID of the bidder (FK)                           |
+| amount    | double    | The bid amount                                  |
+| timestamp | timestamp | Time when the bid was placed                    |
 
-#### Bidder Table
+#### Bidder
 
-| Name      | Type   | Description                   |
-| --------- | ------ | ----------------------------- |
-| bidder_id | UUID   | Unique ID for the bidder (PK) |
-| name      | String | Name of the bidder            |
-| email     | String | Email of the bidder           |
+| Name  | Type    | Description                   |
+| ----- | ------- | ----------------------------- |
+| id    | integer | Unique ID for the bidder (PK) |
+| name  | String  | Name of the bidder            |
+| email | String  | Email of the bidder           |
+
+#### Lobby
+
+| Name       | Type    | Description                  |
+| ---------- | ------- | ---------------------------- |
+| id         | integer | Unique ID for the lobby (PK) |
+| auctionId  | string  | ID of the auction (FK)       |
+| lobbyWsUrl | string  | WebSocket connection URL     |
 
 ### API Specification
 
 #### Auction Service
 
-1. `GET /auctions` - retrieve a list of all auctions, with optional query filtering
+1. `POST /auctions` - create a new auction.
 
-   Optional Query Parameters: `?status=CREATED/RUNNING/CLOSED`
+   Request (JSON):
+
+   ```json
+   {
+     "name": "string",
+     "sellerId": "integer",
+     "startTimestamp": "timestamp",
+     "durationMinutes": "integer",
+     "item": {
+       "name": "string",
+       "reservePrice": "double",
+       "currency": "string"
+     }
+   }
+   ```
+
+   Response (JSON):
+
+   ```json
+   {
+     "auctionId": "integer",
+     "lobbyWsUrl": "string",
+     "message": "Auction created successfully"
+   }
+   ```
+
+2. `GET /auctions` - retrieve a list of all auctions
 
    Response (JSON):
 
    ```json
    [
      {
-       "auction_id": "uuid",
-       "auction_name": "string",
-       "status": "string",
-       "current_highest_bid": "decimal",
-       "end_time": "timestamp"
+       "id": "integer",
+       "name": "string",
+       "sellerId": "integer",
+       "startTimestamp": "timestamp",
+       "endTimestamp": "timestamp",
+       "status": "enum",
+       "winnerId": "integer",
+       "winningFinalAmount": "double",
+       "item": {
+         "id": "integer",
+         "name": "string",
+         "reservePrice": "double",
+         "currency": "string"
+       }
      }
    ]
    ```
 
-2. `GET /auctions/{auction_id}` - retrieve details of a specific auction
+3. `GET /auctions/{auction_id}` - retrieve details of a specific auction
 
    Response (JSON):
 
    ```json
    {
-     "auction_id": "uuid",
-     "auction_name": "string",
-     "seller_id": "uuid",
-     "status": "string",
-     "items": [
+     "id": "integer",
+     "name": "string",
+     "sellerId": "integer",
+     "startTimestamp": "timestamp",
+     "endTimestamp": "timestamp",
+     "status": "enum",
+     "winnerId": "integer",
+     "winningFinalAmount": "double",
+     "item": {
+       "id": "integer",
+       "name": "string",
+       "reservePrice": "double",
+       "currency": "string"
+     },
+     "lobbyWsUrl": "string",
+     "bids": [
        {
-         "item_id": "uuid",
-         "name": "string",
-         "reserve_price": "decimal",
-         "currency": "string",
-         "current_bid_price": "decimal",
-         "bids": [
-           {
-             "bid_id": "uuid",
-             "bidder_id": "uuid",
-             "bid_price": "decimal",
-             "timestamp": "timestamp"
-           }
-         ]
+         "id": "integer",
+         "bidderId": "integer",
+         "amount": "double",
+         "timestamp": "timestamp"
        }
      ]
-   }
-   ```
-
-3. `POST /auctions` - create a new auction.
-
-   Request (JSON):
-
-   ```json
-   {
-     "auction_name": "string",
-     "seller_id": "uuid",
-     "items": [
-       {
-         "name": "string",
-         "reserve_price": "decimal",
-         "currency": "string"
-       }
-     ]
-   }
-   ```
-
-   Response (JSON):
-
-   ```json
-   {
-     "auction_id": "uuid",
-     "message": "Auction created successfully"
    }
    ```
 
@@ -191,18 +302,22 @@ eBay's bidding platform lets sellers list items and buyers place bids. Transitio
 
    ```json
    {
-     "auction_id": "uuid",
-     "winner_id": "uuid",
-     "final_price": "decimal",
+     "auctionId": "integer",
+     "winnerId": "integer",
+     "finalPrice": "double",
      "message": "Auction closed successfully"
    }
    ```
 
 5. `DELETE /auctions/{auction_id}` - delete a specific auction
 
-   Response (No Content):
+   Response:
 
-   - Status code: `204 No Content`
+   ```json
+   {
+     "message": "Auction with ID {auction_id} removed successfully."
+   }
+   ```
 
 6. `GET /health` - check the health status of the Auction Service
 
@@ -211,331 +326,221 @@ eBay's bidding platform lets sellers list items and buyers place bids. Transitio
    ```json
    {
      "status": "ok",
-     "details": {
-       "auctionService": {
+     "info": {
+       "redis": {
          "status": "up"
        },
        "database": {
          "status": "up"
-       },
+       }
+     },
+     "error": {},
+     "details": {
        "redis": {
+         "status": "up"
+       },
+       "database": {
          "status": "up"
        }
      }
-   }
-   ```
-
-7. `gRPC: SendAuctionUpdate` - send updates about the auction’s progress to Bidder Service
-
-   Request (Protobuf):
-
-   ```proto
-   message AuctionUpdate {
-     string auction_id = 1;
-     repeated Bid bids = 2;
-     string auction_status = 3;
-     int64 remaining_time = 4;
-   }
-
-   message Bid {
-     string bidder_id = 1;
-     float bid_amount = 2;
-   }
-   ```
-
-   Response (Protobuf):
-
-   ```proto
-   message AuctionUpdateResponse {
-     string message = 1;
-   }
-   ```
-
-8. `gRPC: CreateLobby` - create a WebSocket lobby in Bidder Service for a newly created auction
-
-   Request (Protobuf):
-
-   ```proto
-   message CreateLobbyRequest {
-    string auction_id = 1;
-    string auction_name = 2;
-   }
-   ```
-
-   Response (Protobuf):
-
-   ```proto
-   message CreateLobbyResponse {
-    string status = 1;
-    string message = 2;
    }
    ```
 
 #### Bidder Service
 
-1. `GET /bids/{bid_id}` - retrieve details of a specific bid
+1.  `POST /bidders` - create a bidder record.
 
-   Response (JSON):
+    Request (JSON):
 
-   ```json
-   {
-     "bid_id": "uuid",
-     "auction_id": "uuid",
-     "item_id": "uuid",
-     "bidder_id": "uuid",
-     "bid_price": "decimal",
-     "timestamp": "timestamp"
-   }
-   ```
-
-2. `GET /bidders/{bidder_id}` - retrieve details of a specific bidder
-
-   Response (JSON):
-
-   ```json
-   {
-     "bidder_id": "uuid",
-     "name": "string",
-     "email": "string",
-     "account_balance": "decimal"
-   }
-   ```
-
-3. `GET /bidders/{bidder_id}/bids` - retrieve all bids placed by a specific bidder.
-
-   Response (JSON):
-
-   ```json
-   [
-     {
-       "bid_id": "uuid",
-       "auction_id": "uuid",
-       "item_id": "uuid",
-       "bid_price": "decimal",
-       "timestamp": "timestamp"
-     }
-   ]
-   ```
-
-4. `POST /bids` - place a bid on an auction.
-
-   Request (JSON):
-
-   ```json
-   {
-     "auction_id": "uuid",
-     "item_id": "uuid",
-     "bidder_id": "uuid",
-     "bid_price": "decimal"
-   }
-   ```
-
-   Response (JSON):
-
-   ```json
-   {
-     "bid_id": "uuid",
-     "message": "Bid placed successfully"
-   }
-   ```
-
-5. `GET /health` - check the health status of the Bidder Service.
-
-   Response (JSON):
-
-   ```json
-   {
-     "status": "ok",
-     "details": {
-       "bidderService": {
-         "status": "up"
-       },
-       "database": {
-         "status": "up"
-       }
-     }
-   }
-   ```
-
-6. `WebSocket /auctions/{auction_id}/lobby` - join an auction lobby for real-time updates on auction progress.
-
-   Message Sent to Client (JSON):
-
-   ```json
-   {
-     "auction_id": "uuid",
-     "bids": [
-       {
-         "bidder_id": "uuid",
-         "bid_price": "decimal",
-         "timestamp": "timestamp"
-       }
-     ],
-     "remaining_time": "30 seconds",
-     "status": "open"
-   }
-   ```
-
-7. `gRPC: PlaceBid` - place a bid on an auction item by sending a request to the Auction Service.
-
-   Request (Protobuf):
-
-   ```proto
-   message PlaceBidRequest {
-     string auction_id = 1;
-     string bidder_id = 2;
-     float bid_amount = 3;
-   }
-   ```
-
-   Response (Protobuf):
-
-   ```proto
-   message PlaceBidResponse {
-     string bid_id = 1;
-     string status = 2;
-     string message = 3;
-   }
-   ```
-
-### Task Timeouts
-
-1. **API Gateway (Nginx) Timeout**
-
-Configuring the timeout in Nginx gateway by setting the `proxy_read_timeout`, `proxy_connect_timeout`, and `proxy_send_timeout` to define how long Nginx will wait for a service to respond.
-
-```shell
-proxy_read_timeout 30s;
-proxy_connect_timeout 30s;
-proxy_send_timeout 30s;
-```
-
-2. **Microservices Timeout (NestJS)**
-
-In **NestJS**, I will use the `timeout()` operator from RxJS to set a timeout for any asynchronous request. For example:
-
-```typescript
-import { timeout } from "rxjs/operators";
-
-this.httpService.get(url).pipe(timeout(5000)); // Timeout after 5 seconds
-```
-
-3. **Database Timeout (Postgres)**
-
-I will Configure timeout in Postgres by setting the `statement_timeout` parameter to abort queries that run longer than a specified duration.
-
-```sql
-SET statement_timeout = '5s';  -- 5 seconds timeout for queries
-```
-
-4. **Redis Timeout**
-
-I will set timeouts in Redis commands by configuring the `timeout` parameter in Redis client.
-
-```javascript
-const client = redis.createClient({ socket: { connectTimeout: 5000 } }); // 5 seconds timeout
-```
-
-### Concurent Tasks Limit
-
-To handle Concurrent Task Limits, I will implement concurrency control mechanism to ensure that only a certain number of tasks are executed simultaneously by limiting concurrency with using semaphores or worker pools in service to control how many tasks are processed concurrently.
-
-In NestJS, I can use a semaphore or rate-limiter to limit the number of concurrent tasks.
-
-Limit Concurrent HTTP Requests in NestJS:
-
-```typescript
-import { HttpService } from "@nestjs/common";
-import * as pLimit from "p-limit";
-
-const limit = pLimit(5); // Limit to 5 concurrent tasks
-
-export class MyService {
-  constructor(private readonly httpService: HttpService) {}
-
-  async fetchMultipleUrls(urls: string[]) {
-    const tasks = urls.map((url) =>
-      limit(() => this.httpService.get(url).toPromise())
-    );
-    return await Promise.all(tasks);
-  }
-}
-```
-
-### Circuit Breaker
-
-The circuit breaker for this system will be implemented using `opossum` from Node.js. This circuit breaker will remove the service when a threshold of 3 errors is reached within the window of task timeout limit \* 3.5.
-
-```javascript
-const CircuitBreaker = require('opossum');
-const axios = require('axios');
-
-const taskTimeoutLimit = 5000; // Example: 5 seconds
-
-const options = {
-  // Task timeout (5 seconds)
-  timeout: taskTimeoutLimit,
-  // Fail after 3 consecutive errors (since 3 errors out of 3 attempts is 100%)
-  errorThresholdPercentage: 100,
-  // Wait for (task timeout limit * 3.5) before trying to recover
-  resetTimeout: taskTimeoutLimit * 3.5,
-};
-const breaker = new CircuitBreaker(() => axios.get('https://example.com'), options);
-
-breaker.fallback(() => 'Service currently unavailable');
-...
-breaker.fire();
-
-```
-
-### Health Monitoring and Alerts
-
-To implement **Health Monitoring and Alerts** for critical load (e.g., 60 pings per second), I'll use **Prometheus** to monitor request rates and **Alertmanager** for alerting.
-
-- **Monitor Load with Prometheus**: Each service will expose a `/metrics` endpoint that Prometheus scrapes. It will track the number of requests per second.
-- **Define Critical Load**: Set an alert rule in Prometheus that triggers when the request rate exceeds 60 pings per second.
-- **Alerting with Alertmanager**: When the threshold is breached, Alertmanager will send notifications (e.g., via email or Slack) to inform the team that the load is critical.
-
-### Load Balancing: Service Load
-
-To implement load balancing via service load with Nginx and Python, I will configure Nginx to use the **`least_conn`** directive, which routes traffic to the instance with the fewest active connections, balancing load effectively.
-
-Nginx config example:
-
-```nginx
-upstream my_python_services {
-    least_conn;
-    server 127.0.0.1:8000;
-    server 127.0.0.1:8001;
-}
-
-server {
-    listen 80;
-    location / {
-        proxy_pass http://my_python_services;
+    ```json
+    {
+      "name": "string",
+      "email": "string"
     }
-}
-```
+    ```
 
-For deeper load balancing, Python services can expose health metrics (e.g., via `psutil`), allowing Nginx to route traffic based on CPU or request load.
+    Response (JSON):
 
-### Unit Testing
+    ```json
+    {
+      "name": "string",
+      "email": "string",
+      "id": "integer"
+    }
+    ```
 
-Unit tests for microservices will be written in **Jest** - popular test framework for Node.js applications.
+2.  `POST /bids` - place a bid on an auction.
 
-### Health Endpoints for Gateway and Service Discovery
+    Request (JSON):
 
-The status endpoints for both the Gateway and Service Discovery, I will use a simple `GET /status` endpoint that returns the current health or status of the service.
+    ```json
+    {
+      "auctionId": "integer",
+      "bidderId": "integer",
+      "amount": "double"
+    }
+    ```
 
-Example response (JSON):
+    Response (JSON):
 
-```json
-{
-  "status": "up",
-  "timestamp": "2024-09-17T12:00:00.000Z",
-  "service": "gateway"
-}
-```
+    ```json
+    {
+      "auctionId": "integer",
+      "bidderId": "integer",
+      "amount": "double",
+      "timestamp": "string",
+      "id": "integer",
+      "message": "Bid placed successfully"
+    }
+    ```
+
+3.  `GET /bids/{bid_id}` - retrieve details of a specific bid
+
+    Response (JSON):
+
+    ```json
+    {
+      "id": "integer",
+      "auctionId": "integer",
+      "bidderId": "integer",
+      "amount": "double",
+      "timestamp": "string"
+    }
+    ```
+
+4.  `GET /bidders/{bidder_id}` - retrieve details of a specific bidder
+
+    Response (JSON):
+
+    ```json
+    {
+      "id": "integer",
+      "name": "string",
+      "email": "string"
+    }
+    ```
+
+5.  `GET /bidders/{bidder_id}/bids` - retrieve all bids placed by a specific bidder.
+
+    Response (JSON):
+
+    ```json
+    [
+      {
+        "id": "integer",
+        "auctionId": "integer",
+        "bidderId": "integer",
+        "amount": "double",
+        "timestamp": "string"
+      }
+    ]
+    ```
+
+6.  `PATCH /bidders/{bidder_id}` - update bidder record.
+
+    Request (JSON):
+
+    ```json
+    {
+      "name": "bob",
+      "email": "bob@mail.com"
+    }
+    ```
+
+    Response (JSON):
+
+    ```json
+    {
+      "id": "integer",
+      "name": "string",
+      "email": "string",
+      "message": "Bidder with ID {bidder_id} updated successfully."
+    }
+    ```
+
+7.  `PATCH /bids/{bid_id}` - update bidder record.
+
+    Request (JSON):
+
+    ```json
+    {
+      "name": "bob",
+      "email": "bob@utm.md"
+    }
+    ```
+
+    Response (JSON):
+
+    ```json
+    {
+      "id": "integer",
+      "auctionId": "integer",
+      "bidderId": "integer",
+      "amount": "double",
+      "timestamp": "string",
+      "message": "Bid with ID {bid_id} updated successfully."
+    }
+    ```
+
+8.  `DELETE /bidders/{bidder_id}` - delete a specific bidder
+
+    Response:
+
+    ```json
+    {
+      "message": "Bidder with ID {bidder_id} removed successfully."
+    }
+    ```
+
+9.  `DELETE /bids/{bid_id}` - delete a specific bid
+
+    Response:
+
+    ```json
+    {
+      "message": "Bid with ID {bid_id} removed successfully."
+    }
+    ```
+
+10. `WebSocket /auctions/{auction_id}/lobby` - join an auction lobby for real-time updates on auction progress.
+
+    Message Sent to Client (JSON):
+
+    ```json
+    {
+      "auctionId": "integer",
+      "bids": [
+        {
+          "bidderId": "integer",
+          "bidPrice": "double",
+          "timestamp": "string"
+        }
+      ],
+      "remainingTime": "string",
+      "status": "enum"
+    }
+    ```
+
+11. `GET /health` - check the health status of the bidder service.
+
+    Response (JSON):
+
+    ```json
+    {
+      "status": "ok",
+      "info": {
+        "database": {
+          "status": "up"
+        }
+      },
+      "error": {},
+      "details": {
+        "database": {
+          "status": "up"
+        }
+      }
+    }
+    ```
 
 ## Deployment & Scaling
 
@@ -543,8 +548,11 @@ Each service, including
 
 - Auction Service
 - Bidder Service
-- API Gateway (Nginx)
-- Service Discovery (Consul)
+- API Gateway
+- Service Discovery
+- PostgreSQL DBs
+- Redis
+- NATS Message Broker
 
 will be deployed as Docker containers within a shared network managed by Docker Compose. Redis and Postgres will also run as containerized services.
 

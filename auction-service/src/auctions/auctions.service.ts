@@ -27,7 +27,8 @@ export class AuctionsService {
   ) {}
 
   async create(createAuctionDto: CreateAuctionDto) {
-    const { item, startTimestamp, duration, ...auctionData } = createAuctionDto;
+    const { item, startTimestamp, durationMinutes, ...auctionData } =
+      createAuctionDto;
 
     let _item = await this.itemRepository.findOne({
       where: { name: item.name },
@@ -39,7 +40,7 @@ export class AuctionsService {
     }
 
     const start = this.validateStartTimestamp(startTimestamp);
-    const end = start.add(duration, 'minutes');
+    const end = start.add(durationMinutes, 'minutes');
 
     const auction = this.auctionRepository.create({
       ...auctionData,
@@ -77,18 +78,20 @@ export class AuctionsService {
       throw new NotFoundException(`Auction with ID ${id} not found`);
     }
 
-    const bids: FindBidsByAuctionResponse = await firstValueFrom(
+    const fetchedBids: FindBidsByAuctionResponse = await firstValueFrom(
       this.natsClient.send({ cmd: 'get-bids-by-auction' }, { auctionId: id }),
     );
+    const bids = fetchedBids.bids.map(({ auctionId, ...rest }) => rest);
     const { lobbyWsUrl } = await firstValueFrom(
       this.natsClient.send({ cmd: 'get-auction-lobby' }, { auctionId: id }),
     );
 
-    return { ...auction, lobbyWsUrl, bids: bids.bids };
+    return { ...auction, lobbyWsUrl, bids };
   }
 
   async update(id: number, updateAuctionDto: UpdateAuctionDto) {
-    const { item, startTimestamp, duration, ...auctionData } = updateAuctionDto;
+    const { item, startTimestamp, durationMinutes, ...auctionData } =
+      updateAuctionDto;
 
     let _item = null;
     if (item) {
@@ -120,7 +123,9 @@ export class AuctionsService {
       });
     } else {
       start = this.validateStartTimestamp(startTimestamp);
-      end = duration ? start.add(duration, 'minutes') : _item.endTimestamp;
+      end = durationMinutes
+        ? start.add(durationMinutes, 'minutes')
+        : _item.endTimestamp;
       auction = await this.auctionRepository.preload({
         id,
         ...auctionData,
@@ -177,12 +182,13 @@ export class AuctionsService {
       auctionId: id,
       winnerId: auction.winnerId,
       finalPrice: auction.winningFinalAmount,
+      message: 'Auction closed successfully',
     };
   }
 
   async isAuctionRunning(auctionId: number) {
     const auction = await this.findOne(auctionId);
-    const now = dayjs().add(3, 'hour').toISOString();
+    const now = dayjs().add(2, 'hour').toISOString();
     const start = dayjs(auction.startTimestamp);
     const end = dayjs(auction.endTimestamp);
 
@@ -190,7 +196,7 @@ export class AuctionsService {
   }
 
   private validateStartTimestamp(startTimestamp: string) {
-    const now = dayjs().add(3, 'hour').toISOString();
+    const now = dayjs().add(2, 'hour').toISOString();
     const start = dayjs(startTimestamp);
 
     if (start.isBefore(now)) {

@@ -25,7 +25,7 @@ export class CreateAuctionDto {
   startTimestamp: string;
 
   @IsNumber()
-  duration: number;
+  durationMinutes: number;
 
   @ValidateNested()
   @Type(() => ItemDto)

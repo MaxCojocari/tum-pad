@@ -19,7 +19,7 @@ export class AuctionsJob {
 
   @Cron(CronExpression.EVERY_SECOND)
   async updateAuctionStatuses() {
-    const now = dayjs().add(3, 'hour').toISOString();
+    const now = dayjs().add(2, 'hour').toISOString();
     const auctionsToStart = await this.auctionRepository.find({
       where: {
         status: AuctionStatus.CREATED,

@@ -42,7 +42,7 @@ export class LobbyService {
     const formattedBids = bids.map((bid) => ({
       bidderId: bid.bidderId,
       bidPrice: bid.amount,
-      timestamp: dayjs(bid.timestamp).add(3, 'hour').toISOString(),
+      timestamp: dayjs(bid.timestamp).add(2, 'hour').toISOString(),
     }));
     const remainingTime = this.calculateRemainingTime(auction.endTimestamp);
 
@@ -69,7 +69,7 @@ export class LobbyService {
   }
 
   private calculateRemainingTime(auctionEndTime: string): string {
-    const now = dayjs().add(3, 'hour').toISOString();
+    const now = dayjs().add(2, 'hour').toISOString();
     const endTime = dayjs(auctionEndTime);
 
     if (endTime.isBefore(now)) {
