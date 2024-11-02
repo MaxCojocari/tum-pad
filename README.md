@@ -117,7 +117,7 @@ Copy the `lobbyWsUrl` and use it to initialize your client connection. Upon conn
 
 ## System Design
 
-![alt text](./system_design.png)
+![alt text](./system_design_updated.png)
 
 - **Auction Service**: Handles backend logic for managing auctions, processing bids, and ensuring the auction process runs correctly.
 
@@ -126,6 +126,14 @@ Copy the `lobbyWsUrl` and use it to initialize your client connection. Upon conn
 - **API Gateway**: Acts as the entry point for all client requests, routing traffic to the appropriate microservices.
 
 - **Service Discovery**: Keeps track of available services and their instances to allow the API Gateway to route requests to the appropriate instances.
+
+New features:
+
+- Integrate Prometheus and Grafana for effective service logging and monitoring.
+- Implement a Transaction Coordinator in the API Gateway to handle 2PC and long-running transaction mechanisms, ensuring safe and atomic creation of auctions and their lobbies in the Bidder Service.
+- Add a Data Warehouse for in-depth analysis of auctions, bids, bidders, and their activity.
+- Set up a PostgreSQL cluster with three replicas (one master for read and write, and two read-only followers) to ensure redundancy and failover via customized configurations.
+- Deploy a Redis cluster in the auction service for sharded caching of user data, utilizing consistent hashing for efficient data distribution.
 
 ## Technology Stack & Communication Patterns
 
@@ -157,11 +165,11 @@ Copy the `lobbyWsUrl` and use it to initialize your client connection. Upon conn
 
 Inter-service communication:
 
-- API gateway - services: RESTful APIs over HTTP/1.1
-- Service discovery - services: HTTP/1.1, gRPC over HTTP/2;
+- API Gateway - services: RESTful APIs over HTTP/1.1
+- Service Discovery - services: HTTP/1.1, gRPC over HTTP/2;
 - User-lobby communication: WebSocket over TCP.
 - Auction Service - Bidder Service: Request/Response with NATS as message broker
-- API gateway - service discovery: Pub/Sub with Redis as message broker
+- API Gateway - Service Discovery: Pub/Sub with Redis as message broker
 
 ## Data Management
 
