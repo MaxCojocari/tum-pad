@@ -145,7 +145,7 @@ export class AuctionsService {
   async remove(id: number) {
     const auction = await this.auctionRepository.findOne({ where: { id } });
     if (!auction) {
-      throw new Error(`Auction with ID ${id} not found.`);
+      throw new NotFoundException(`Auction with ID ${id} not found.`);
     }
     await this.auctionRepository.remove(auction);
     return { message: `Auction with ID ${id} removed successfully.` };

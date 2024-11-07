@@ -30,7 +30,7 @@ export class AppController {
 
   @Get('/ping')
   getPing() {
-    const now = dayjs().add(3, 'hour').toISOString();
+    const now = dayjs().add(2, 'hour').toISOString();
     console.log(`Pong from instance ${this.host}:${this.port}`);
 
     return {

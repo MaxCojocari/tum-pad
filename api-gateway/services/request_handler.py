@@ -1,15 +1,14 @@
 import time
 import requests
-from requests.exceptions import Timeout, RequestException
+from requests.exceptions import RequestException
 from flask import jsonify
-from config.configuration import REQ_TIMEOUT, FAIL_MAX, MONITORING_TIME_INTERVAL, AUCTION_SERVICE_CRITICAL_LOAD, BIDDER_SERVICE_CRITICAL_LOAD
+from config.configuration import REQ_TIMEOUT, MONITORING_TIME_INTERVAL, \
+    AUCTION_SERVICE_CRITICAL_LOAD, BIDDER_SERVICE_CRITICAL_LOAD
 from store.replicas import *
-import pybreaker
-from services.replicas_handler import remove_service_replica
 from services.redis_service import redis_client
 from urllib.parse import urlparse
-
-breaker = pybreaker.CircuitBreaker(fail_max=FAIL_MAX, reset_timeout=10)
+from pybreaker import CircuitBreakerError
+from services.circuit_breaker import auction_breaker, bidder_breaker
 
 current_replica_index = -1
 
@@ -44,16 +43,12 @@ def track_requests_over_interval(service_name, interval=MONITORING_TIME_INTERVAL
 
 def inc_req_replica(url):
     parsed_url = urlparse(url)
-    host = parsed_url.hostname
-    port = parsed_url.port
-    redis_key = f"{host}_{port}_load"
+    redis_key = f"{parsed_url.hostname}_{parsed_url.port}_load"
     redis_client.incr(redis_key)
 
 def dec_req_replica(url):
     parsed_url = urlparse(url)
-    host = parsed_url.hostname
-    port = parsed_url.port
-    redis_key = f"{host}_{port}_load"
+    redis_key = f"{parsed_url.hostname}_{parsed_url.port}_load"
     redis_client.decr(redis_key)
 
 def get_round_robin_service(service_replicas):
@@ -69,12 +64,10 @@ def get_least_loaded_service(service_replicas):
     
     for url in service_replicas:
         parsed_url = urlparse(url)
-        host = parsed_url.hostname
-        port = parsed_url.port
-        redis_key = f"{host}_{port}_load"
+        redis_key = f"{parsed_url.hostname}_{parsed_url.port}_load"
         load = redis_client.get(redis_key) or 0
         replica_info.append({
-            "url": f"http://{host}:{port}",
+            "url": f"http://{parsed_url.hostname}:{parsed_url.port}",
             "load": int(load)
         })
     
@@ -86,141 +79,78 @@ def get_service(load_balancer, replicas):
     elif load_balancer == "least_load":
         selected_service = get_least_loaded_service(replicas) 
     
-    return selected_service  
+    return selected_service
 
 def handle_request(method, route, data=None, variant=1, load_balancer="round_robin"):
-    """
-    Handle HTTP requests with flexible Load Balancing and Circuit Breaker logic.
-    """
+    global current_replica_index
     if variant == 1:
-        selected_service = get_service(load_balancer, auction_service_replicas)
-        service_name = 'auction-service'
-    elif variant == 2:
-        selected_service = get_service(load_balancer, bidder_service_replicas)
-        service_name = 'bidder-service'
-        
-    if not selected_service:
-        return jsonify({'error': 'No available services to handle the request'}), 503
-
-    service_url = selected_service['url'] + route
-
-    track_requests_over_interval(service_name=service_name)
+        replicas, service_name = auction_service_replicas, 'auction-service'
+    else:
+        replicas, service_name = bidder_service_replicas, 'bidder-service'
     
-    try:
-        if method == 'GET':
-            response = get(service_url, retry_attempts=FAIL_MAX, timeout=REQ_TIMEOUT)
-        elif method == 'POST':
-            response = post(service_url, json=data, retry_attempts=FAIL_MAX, timeout=REQ_TIMEOUT)
-        elif method == 'PATCH':
-            response = patch(service_url, json=data, retry_attempts=FAIL_MAX, timeout=REQ_TIMEOUT)
-        elif method == 'DELETE':
-            response = delete(service_url, retry_attempts=FAIL_MAX, timeout=REQ_TIMEOUT)
+    if not replicas:
+        return jsonify({'error': f'No available instances of {service_name}.'}), 503
+    
+    track_requests_over_interval(service_name)
+    current_replicas = set(replicas)
+    
+    while current_replicas:
+        selected_service = get_service(load_balancer, list(current_replicas))
+        service_url = selected_service['url'] + route
         
-        if response.status_code == 408:
-            return jsonify({'error': 'Request to service timed out'}), 504
-        
-        if response.status_code < 500 and response.status_code >= 400:
-            response.raise_for_status()
+        try:
+            response = make_request(method, service_url, data)
 
-        return jsonify(response.json()), response.status_code
+            if (response is not None) and response.status_code < 500:
+                return jsonify(response.json()), response.status_code
+            
+            current_replicas.discard(selected_service['url'])
+            
+            if current_replicas and load_balancer == "round_robin":
+                current_replica_index = (current_replica_index - 1) % len(current_replicas)
+                
+        except RequestException as e:
+            print(f"Error with {selected_service['url']}: {e}")
 
-    except pybreaker.CircuitBreakerError:
-        if variant == 2:
-            remove_service_replica('bidder-service', selected_service['url'])
-        return jsonify({'error': 'Circuit breaker is open. Service temporarily unavailable.'}), 503
-    except RequestException as e:
-        return jsonify({'error': str(e), 'data': response.json()}), 500
-  
-@breaker  
+    raise RequestException("All service instances failed.")
+
+
+def make_request(method, url, json=None, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
+    response = None
+    for attempt in range(retry_attempts):
+        try:
+            inc_req_replica(url)
+            response = requests.request(method, url, json=json, timeout=timeout)
+
+            if response.status_code >= 500:
+                response.raise_for_status()
+
+            dec_req_replica(url)
+            return response
+        except Exception as e:
+            print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
+            time.sleep(retry_backoff)
+
 def get(url, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
-    response = None
-    for attempt in range(retry_attempts):
-        try:            
-            inc_req_replica(url)
-            response = requests.get(url, timeout=timeout)
-            
-            if response.status_code >= 500:
-                response.raise_for_status()
-            
-            dec_req_replica(url)
-            return response
-        
-        except Exception as e:
-            print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
-            time.sleep(retry_backoff)
+    return make_request("GET", url, retry_attempts=retry_attempts, timeout=timeout, retry_backoff=retry_backoff)
 
-    if response.status_code < 500 and response.status_code >= 400:
-        return response
-
-    breaker.open()
-    raise pybreaker.CircuitBreakerError()
-
-@breaker  
 def post(url, json, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
-    response = None
-    for attempt in range(retry_attempts):
-        try:
-            inc_req_replica(url)
-            response = requests.post(url, json=json, timeout=timeout)
-            
-            if response.status_code >= 500:
-                response.raise_for_status()
-            
-            dec_req_replica(url)
-            return response
-        except Exception as e:
-            print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
-            time.sleep(retry_backoff)
-     
-    if response.status_code < 500 and response.status_code >= 400:
-        return response
-        
-    breaker.open()
-    raise pybreaker.CircuitBreakerError()
+    return make_request("POST", url, json=json, retry_attempts=retry_attempts, timeout=timeout, retry_backoff=retry_backoff)
 
-@breaker  
 def patch(url, json, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
-    response = None
-    for attempt in range(retry_attempts):
-        try:
-            inc_req_replica(url)
-            response = requests.patch(url, json=json, timeout=timeout)
-            
-            if response.status_code >= 500:
-                response.raise_for_status()
-            
-            dec_req_replica(url)
-            return response
-        except Exception as e:
-            print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
-            time.sleep(retry_backoff)
+    return make_request("PATCH", url, json=json, retry_attempts=retry_attempts, timeout=timeout, retry_backoff=retry_backoff)
 
-    if response.status_code < 500 and response.status_code >= 400:
-        return response
-
-    breaker.open()
-    raise pybreaker.CircuitBreakerError()
-
-@breaker  
 def delete(url, retry_attempts=3, timeout=REQ_TIMEOUT, retry_backoff=1):
-    response = None
-    for attempt in range(retry_attempts):
-        try:
-            inc_req_replica(url)
-            response = requests.delete(url, timeout=timeout)
-            
-            if response.status_code >= 500:
-                response.raise_for_status()
-            
-            dec_req_replica(url)
-            return response
-        except Exception as e:
-            print(f"Retry {attempt + 1}/{retry_attempts} failed with error: {e}")
-            time.sleep(retry_backoff)
+    return make_request("DELETE", url, retry_attempts=retry_attempts, timeout=timeout, retry_backoff=retry_backoff)
 
-    if response.status_code < 500 and response.status_code >= 400:
-        return response
+def handle_auction_service_request(*args, **kwargs):
+    try:
+        return auction_breaker.call(handle_request, *args, **kwargs)
+    except CircuitBreakerError:
+        return jsonify({'error': 'Circuit breaker is open. Auction service temporarily unavailable.'}), 503
 
-    breaker.open()
-    raise pybreaker.CircuitBreakerError()
-    
+def handle_bidder_service_request(*args, **kwargs):
+    try:
+        return bidder_breaker.call(handle_request, *args, **kwargs)
+    except CircuitBreakerError:
+        return jsonify({'error': 'Circuit breaker is open. Bidder service temporarily unavailable.'}), 503
