@@ -16,3 +16,5 @@ docker-compose -f docker-compose.prod.yml up -d \
     auction-service-1 auction-service-2 auction-service-3 \
     bidder-service-1 bidder-service-2 bidder-service-3 \
     api-gateway
+
+docker-compose -f docker-compose.prod.yml up -d prometheus grafana

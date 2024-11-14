@@ -11,6 +11,10 @@ import { AuctionsModule } from './auctions/auctions.module';
 import * as redisStore from 'cache-manager-ioredis';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ServiceRegistrationModule } from './service-registration/service-registration.module';
+import {
+  makeCounterProvider,
+  PrometheusModule,
+} from '@willsoto/nestjs-prometheus';
 
 @Global()
 @Module({
@@ -49,9 +53,20 @@ import { ServiceRegistrationModule } from './service-registration/service-regist
     ScheduleModule.forRoot(),
     AuctionsModule,
     ServiceRegistrationModule,
+    PrometheusModule.register({
+      defaultMetrics: {
+        enabled: true,
+      },
+    }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    makeCounterProvider({
+      name: 'auction_ping_calls_total',
+      help: 'auction_ping_calls_total_help',
+    }),
+  ],
   exports: [CacheModule],
 })
 export class AppModule {

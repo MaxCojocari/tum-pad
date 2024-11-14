@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -10,7 +10,12 @@ import { BiddersModule } from './bidders/bidders.module';
 import { BidsModule } from './bids/bids.module';
 import { ServiceRegistrationModule } from './service-registration/service-registration.module';
 import { LobbyModule } from './lobby/lobby.module';
+import {
+  makeCounterProvider,
+  PrometheusModule,
+} from '@willsoto/nestjs-prometheus';
 
+@Global()
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -37,9 +42,20 @@ import { LobbyModule } from './lobby/lobby.module';
     BidsModule,
     ServiceRegistrationModule,
     LobbyModule,
+    PrometheusModule.register({
+      defaultMetrics: {
+        enabled: true,
+      },
+    }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    makeCounterProvider({
+      name: 'bidder_ping_calls_total',
+      help: 'bidder_ping_calls_total_help',
+    }),
+  ],
 })
 export class AppModule {
   constructor(private configService: ConfigService) {

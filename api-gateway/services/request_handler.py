@@ -9,6 +9,7 @@ from services.redis_service import redis_client
 from urllib.parse import urlparse
 from pybreaker import CircuitBreakerError
 from services.circuit_breaker import auction_breaker, bidder_breaker
+from services.replicas_handler import remove_service_replica
 
 current_replica_index = -1
 
@@ -92,10 +93,9 @@ def handle_request(method, route, data=None, variant=1, load_balancer="round_rob
         return jsonify({'error': f'No available instances of {service_name}.'}), 503
     
     track_requests_over_interval(service_name)
-    current_replicas = set(replicas)
     
-    while current_replicas:
-        selected_service = get_service(load_balancer, list(current_replicas))
+    while replicas:
+        selected_service = get_service(load_balancer, replicas)
         service_url = selected_service['url'] + route
         
         try:
@@ -103,11 +103,8 @@ def handle_request(method, route, data=None, variant=1, load_balancer="round_rob
 
             if (response is not None) and response.status_code < 500:
                 return jsonify(response.json()), response.status_code
-            
-            current_replicas.discard(selected_service['url'])
-            
-            if current_replicas and load_balancer == "round_robin":
-                current_replica_index = (current_replica_index - 1) % len(current_replicas)
+
+            remove_service_replica(service_name, selected_service['url'])
                 
         except RequestException as e:
             print(f"Error with {selected_service['url']}: {e}")

@@ -2,8 +2,9 @@ import { Controller, Get, HttpException, HttpStatus } from '@nestjs/common';
 import { AppService } from './app.service';
 import { delay, of } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
-import { faker } from '@faker-js/faker';
 import * as dayjs from 'dayjs';
+import { Counter } from 'prom-client';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
 
 @Controller()
 export class AppController {
@@ -13,6 +14,8 @@ export class AppController {
   constructor(
     private readonly appService: AppService,
     private readonly configService: ConfigService,
+    @InjectMetric('auction_ping_calls_total')
+    private readonly endpointCounter: Counter<string>,
   ) {
     this.host = this.configService.get<string>('app.host');
     this.port = this.configService.get<number>('app.port');
@@ -30,6 +33,8 @@ export class AppController {
 
   @Get('/ping')
   getPing() {
+    this.endpointCounter.inc();
+
     const now = dayjs().add(2, 'hour').toISOString();
     console.log(`Pong from instance ${this.host}:${this.port}`);
 
