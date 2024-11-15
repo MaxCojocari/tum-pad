@@ -43,7 +43,6 @@ export class LobbyGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // Broadcast auction updates to all connected clients in the auction lobby
   async sendAuctionUpdate(auctionId: number) {
     const auctionData = await this.lobbyService.getAuctionData(auctionId);
-    // Broadcast to the auction lobby room
     this.server.to(auctionId.toString()).emit('auctionUpdate', auctionData);
   }
 

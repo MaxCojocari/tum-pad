@@ -4,6 +4,8 @@ docker build -t tum-pad-auction-service ./auction-service
 
 docker build -t tum-pad-bidder-service ./bidder-service
 
+docker build -t tum-pad-api-gateway ./api-gateway
+
 docker-compose -f docker-compose.prod.yml up -d \
     redis-auction redis-gateway-registry \
     postgres-auction postgres-bidder pgadmin \

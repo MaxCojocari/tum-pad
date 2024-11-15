@@ -84,6 +84,7 @@ def get_service(load_balancer, replicas):
 
 def handle_request(method, route, data=None, variant=1, load_balancer="round_robin"):
     global current_replica_index
+    
     if variant == 1:
         replicas, service_name = auction_service_replicas, 'auction-service'
     else:

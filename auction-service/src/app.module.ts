@@ -15,6 +15,8 @@ import {
   makeCounterProvider,
   PrometheusModule,
 } from '@willsoto/nestjs-prometheus';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
 
 @Global()
 @Module({
@@ -66,6 +68,10 @@ import {
       name: 'auction_ping_calls_total',
       help: 'auction_ping_calls_total_help',
     }),
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
   ],
   exports: [CacheModule],
 })

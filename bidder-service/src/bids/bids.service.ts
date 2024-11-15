@@ -40,8 +40,8 @@ export class BidsService {
 
     const bid = this.bidsRepository.create(createBidDto);
 
-    this.lobbyWsGateway.sendAuctionUpdate(createBidDto.auctionId);
     await this.bidsRepository.save(bid);
+    await this.lobbyWsGateway.sendAuctionUpdate(createBidDto.auctionId);
 
     return {
       ...bid,

@@ -49,7 +49,7 @@ export class AuctionsController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: number) {
+  delete(@Param('id') id: number) {
     return this.auctionsService.remove(id);
   }
 

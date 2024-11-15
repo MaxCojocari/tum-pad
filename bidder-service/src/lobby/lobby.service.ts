@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Bid } from '../bids/entities/bid.entity';
@@ -24,8 +24,12 @@ export class LobbyService {
     return this.lobbyRepository.find();
   }
 
-  findOne(auctionId: number) {
-    return this.lobbyRepository.findOne({ where: { auctionId } });
+  async findOne(auctionId: number) {
+    const lobby = await this.lobbyRepository.findOne({ where: { auctionId } });
+    if (!lobby) {
+      throw new NotFoundException(`Lobby for auctionId ${auctionId} not found`);
+    }
+    return lobby;
   }
 
   async getAuctionData(auctionId: number) {
@@ -66,6 +70,19 @@ export class LobbyService {
     const lobbyWsUrl = `ws://localhost:${port}/auctions/${auctionId}/lobby`;
     await this.lobbyRepository.save({ auctionId, lobbyWsUrl });
     return { lobbyWsUrl };
+  }
+
+  async deleteLobby(auctionId: number) {
+    const lobby = await this.findOne(auctionId);
+
+    if (!lobby) {
+      throw new NotFoundException(`Lobby for auctionId ${auctionId} not found`);
+    }
+
+    await this.lobbyRepository.remove(lobby);
+    return {
+      message: `Lobby for auction with ID ${auctionId} removed successfully.`,
+    };
   }
 
   private calculateRemainingTime(auctionEndTime: string): string {
