@@ -1,7 +1,7 @@
 export interface Bid {
   id: number;
   auctionId: number;
-  bidderId: number;
+  bidderId: string;
   amount: number;
   timestamp: Date;
 }

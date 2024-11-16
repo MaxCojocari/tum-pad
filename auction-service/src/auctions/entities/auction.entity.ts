@@ -11,7 +11,7 @@ export class Auction {
   name: string;
 
   @Column()
-  sellerId: number;
+  sellerId: string;
 
   @ManyToOne(() => Item, (item) => item.auction)
   item: Item;
@@ -30,7 +30,7 @@ export class Auction {
   status: AuctionStatus;
 
   @Column({ nullable: true })
-  winnerId?: number;
+  winnerId?: string;
 
   @Column({ type: 'double precision', nullable: true })
   winningFinalAmount?: number;

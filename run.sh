@@ -10,6 +10,7 @@ docker-compose -f docker-compose.prod.yml up -d \
     redis-auction redis-gateway-registry \
     postgres-auction postgres-bidder pgadmin \
     service-discovery \
+    mongo1 mongo2 mongo3 \
     nats
 
 docker-compose exec redis-gateway-registry redis-cli FLUSHALL

@@ -15,7 +15,7 @@ export class CreateAuctionDto {
   name: string;
 
   @IsNumber()
-  sellerId: number;
+  sellerId: string;
 
   @IsEnum(AuctionStatus)
   @IsOptional()

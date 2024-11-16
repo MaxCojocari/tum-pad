@@ -16,7 +16,7 @@ export class Bid {
   auctionId: number;
 
   @Column()
-  bidderId: number;
+  bidderId: string;
 
   @Column({ type: 'double precision' })
   amount: number;

@@ -181,11 +181,11 @@ Inter-service communication:
 | ----------------- | ------- | ------------------------------------------------------ |
 | id                | integer | Unique ID for the auction (PK)                         |
 | name              | string  | Name of the auction                                    |
-| sellerId          | integer | ID of the seller (FK)                                  |
+| sellerId          | string  | ID of the seller (FK)                                  |
 | startTimestamp    | string  | Auction start time                                     |
 | endTimestamp      | string  | Auction end time                                       |
 | status            | enum    | Status of the auction (`CREATED`, `RUNNING`, `CLOSED`) |
-| winnerId          | integer | ID of the winner                                       |
+| winnerId          | string  | ID of the winner                                       |
 | winnerFinalAmount | double  | Winning bid amount                                     |
 
 #### Item
@@ -203,17 +203,17 @@ Inter-service communication:
 | --------- | --------- | ----------------------------------------------- |
 | id        | integer   | Unique ID for the bid (PK)                      |
 | auctionId | integer   | ID of the auction where the bid was placed (FK) |
-| bidderId  | integer   | ID of the bidder (FK)                           |
+| bidderId  | string    | ID of the bidder (FK)                           |
 | amount    | double    | The bid amount                                  |
 | timestamp | timestamp | Time when the bid was placed                    |
 
 #### Bidder
 
-| Name  | Type    | Description                   |
-| ----- | ------- | ----------------------------- |
-| id    | integer | Unique ID for the bidder (PK) |
-| name  | String  | Name of the bidder            |
-| email | String  | Email of the bidder           |
+| Name  | Type   | Description                   |
+| ----- | ------ | ----------------------------- |
+| id    | string | Unique ID for the bidder (PK) |
+| name  | string | Name of the bidder            |
+| email | string | Email of the bidder           |
 
 #### Lobby
 
@@ -234,7 +234,7 @@ Inter-service communication:
    ```json
    {
      "name": "string",
-     "sellerId": "integer",
+     "sellerId": "string",
      "startTimestamp": "timestamp",
      "durationMinutes": "integer",
      "item": {
@@ -268,7 +268,7 @@ Inter-service communication:
        "startTimestamp": "timestamp",
        "endTimestamp": "timestamp",
        "status": "enum",
-       "winnerId": "integer",
+       "winnerId": "string",
        "winningFinalAmount": "double",
        "item": {
          "id": "integer",
@@ -292,7 +292,7 @@ Inter-service communication:
      "startTimestamp": "timestamp",
      "endTimestamp": "timestamp",
      "status": "enum",
-     "winnerId": "integer",
+     "winnerId": "string",
      "winningFinalAmount": "double",
      "item": {
        "id": "integer",
@@ -304,7 +304,7 @@ Inter-service communication:
      "bids": [
        {
          "id": "integer",
-         "bidderId": "integer",
+         "bidderId": "string",
          "amount": "double",
          "timestamp": "timestamp"
        }
@@ -319,7 +319,7 @@ Inter-service communication:
    ```json
    {
      "auctionId": "integer",
-     "winnerId": "integer",
+     "winnerId": "string",
      "finalPrice": "double",
      "message": "Auction closed successfully"
    }
@@ -381,7 +381,8 @@ Inter-service communication:
     {
       "name": "string",
       "email": "string",
-      "id": "integer"
+      "_id": "string",
+      "__v": "number"
     }
     ```
 
@@ -392,7 +393,7 @@ Inter-service communication:
     ```json
     {
       "auctionId": "integer",
-      "bidderId": "integer",
+      "bidderId": "string",
       "amount": "double"
     }
     ```
@@ -402,7 +403,7 @@ Inter-service communication:
     ```json
     {
       "auctionId": "integer",
-      "bidderId": "integer",
+      "bidderId": "string",
       "amount": "double",
       "timestamp": "string",
       "id": "integer",
@@ -418,7 +419,7 @@ Inter-service communication:
     {
       "id": "integer",
       "auctionId": "integer",
-      "bidderId": "integer",
+      "bidderId": "string",
       "amount": "double",
       "timestamp": "string"
     }
@@ -430,9 +431,10 @@ Inter-service communication:
 
     ```json
     {
-      "id": "integer",
+      "_id": "string",
       "name": "string",
-      "email": "string"
+      "email": "string",
+      "__v": "number"
     }
     ```
 
@@ -445,7 +447,7 @@ Inter-service communication:
       {
         "id": "integer",
         "auctionId": "integer",
-        "bidderId": "integer",
+        "bidderId": "string",
         "amount": "double",
         "timestamp": "string"
       }
@@ -481,21 +483,22 @@ Inter-service communication:
 
     ```json
     {
-      "id": "integer",
+      "_id": "string",
       "name": "string",
       "email": "string",
+      "__v": "number",
       "message": "Bidder with ID {bidder_id} updated successfully."
     }
     ```
 
-8.  `PATCH /bids/{bid_id}` - update bidder record.
+8.  `PATCH /bids/{bid_id}` - update bid record.
 
     Request (JSON):
 
     ```json
     {
-      "name": "bob",
-      "email": "bob@utm.md"
+      "bidderId": "string",
+      "amount": "double"
     }
     ```
 
@@ -505,7 +508,7 @@ Inter-service communication:
     {
       "id": "integer",
       "auctionId": "integer",
-      "bidderId": "integer",
+      "bidderId": "string",
       "amount": "double",
       "timestamp": "string",
       "message": "Bid with ID {bid_id} updated successfully."
@@ -542,11 +545,17 @@ Inter-service communication:
       "info": {
         "database": {
           "status": "up"
+        },
+        "mongodb": {
+          "status": "up"
         }
       },
       "error": {},
       "details": {
         "database": {
+          "status": "up"
+        },
+        "mongodb": {
           "status": "up"
         }
       }
@@ -562,7 +571,7 @@ Inter-service communication:
       "auctionId": "integer",
       "bids": [
         {
-          "bidderId": "integer",
+          "bidderId": "string",
           "bidPrice": "double",
           "timestamp": "string"
         }

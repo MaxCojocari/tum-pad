@@ -1,6 +1,7 @@
 import { Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { LobbyService } from './lobby.service';
+import { CreateLobbyDto } from './dto/create-lobby.dto';
 
 @Controller('lobbies')
 export class LobbyController {
@@ -12,7 +13,7 @@ export class LobbyController {
   }
 
   @Post()
-  create(@Payload() data: { auctionId: number }) {
+  create(@Payload() data: CreateLobbyDto) {
     return this.lobbyService.createLobby(data.auctionId);
   }
 

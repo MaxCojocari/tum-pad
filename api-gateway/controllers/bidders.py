@@ -12,20 +12,20 @@ def create_bidder():
 def get_all_bidders():
     return handle_bidder_service_request('GET', '/bidders', variant=2)
 
-@bidders_blueprint.route('/<int:id>', methods=['GET'])
+@bidders_blueprint.route('/<id>', methods=['GET'])
 def get_bidder(id):
     return handle_bidder_service_request('GET', f'/bidders/{id}', variant=2)
 
-@bidders_blueprint.route('/<int:id>/bids', methods=['GET'])
+@bidders_blueprint.route('/<id>/bids', methods=['GET'])
 def get_bids_by_bidder(id):
     return handle_bidder_service_request('GET', f'/bidders/{id}/bids', variant=2)
 
-@bidders_blueprint.route('/<int:id>', methods=['PATCH'])
+@bidders_blueprint.route('/<id>', methods=['PATCH'])
 def update_bidder(id):
     data = request.json
     return handle_bidder_service_request('PATCH', f'/bidders/{id}', data, variant=2)
 
-@bidders_blueprint.route('/<int:id>', methods=['DELETE'])
+@bidders_blueprint.route('/<id>', methods=['DELETE'])
 def remove_bidder(id):
     return handle_bidder_service_request('DELETE', f'/bidders/{id}', variant=2)
 

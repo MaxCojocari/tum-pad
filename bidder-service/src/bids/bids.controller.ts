@@ -10,15 +10,7 @@ import {
 import { BidsService } from './bids.service';
 import { CreateBidDto } from './dto/create-bid.dto';
 import { UpdateBidDto } from './dto/update-bid.dto';
-import {
-  Ctx,
-  GrpcMethod,
-  MessagePattern,
-  Payload,
-  RmqContext,
-} from '@nestjs/microservices';
-import { CreateLobbyDto } from '../bidders/dto/create-lobby.dto';
-import { GetBidsByAuctionDto } from '../bidders/dto/get-bids-auction.dto';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Controller('bids')
 export class BidsController {
@@ -50,7 +42,7 @@ export class BidsController {
   }
 
   @MessagePattern({ cmd: 'get-bids-by-auction' })
-  findBidsByAuction(@Payload() data: CreateLobbyDto) {
+  findBidsByAuction(@Payload() data: { auctionId: number }) {
     return this.bidsService.findBidsByAuction(data.auctionId);
   }
 }

@@ -51,12 +51,6 @@ export class AuctionsService {
     });
     const savedAuction = await this.auctionRepository.save(auction);
 
-    // const { lobbyWsUrl } = await firstValueFrom(
-    //   this.natsClient
-    //     .send({ cmd: 'create-lobby' }, { auctionId: savedAuction.id })
-    //     .pipe(timeout(5000)),
-    // );
-
     return {
       auctionId: savedAuction.id,
       message: 'Auction created successfully',

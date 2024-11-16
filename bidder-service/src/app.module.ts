@@ -16,6 +16,7 @@ import {
 } from '@willsoto/nestjs-prometheus';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Global()
 @Module({
@@ -37,6 +38,13 @@ import { LoggingInterceptor } from './interceptors/logging.interceptor';
         database: configService.get<string>('database.db'),
         autoLoadEntities: true,
         synchronize: true,
+      }),
+    }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>('mongodb.uri'),
       }),
     }),
     HealthModule,

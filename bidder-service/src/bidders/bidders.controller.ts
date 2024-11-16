@@ -26,22 +26,22 @@ export class BiddersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id') id: string) {
     return this.biddersService.findOne(id);
   }
 
   @Get(':id/bids')
-  findBidsByBidder(@Param('id') id: number) {
+  findBidsByBidder(@Param('id') id: string) {
     return this.biddersService.findAllByBidder(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: number, @Body() updateBidderDto: UpdateBidderDto) {
+  update(@Param('id') id: string, @Body() updateBidderDto: UpdateBidderDto) {
     return this.biddersService.update(id, updateBidderDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: number) {
+  remove(@Param('id') id: string) {
     return this.biddersService.remove(id);
   }
 }

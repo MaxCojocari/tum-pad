@@ -5,47 +5,59 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Bidder } from './entities/bidder.entity';
 import { Bid } from '../bids/entities/bid.entity';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class BiddersService {
   constructor(
-    @InjectRepository(Bidder)
-    private readonly bidderRepository: Repository<Bidder>,
+    @InjectModel(Bidder.name) private readonly bidderModel: Model<Bidder>,
     @InjectRepository(Bid)
     private readonly bidsRepository: Repository<Bid>,
   ) {}
 
   create(createBidderDto: CreateBidderDto) {
-    const bidder = this.bidderRepository.create(createBidderDto);
-    return this.bidderRepository.save(bidder);
+    const bidder = new this.bidderModel(createBidderDto);
+    return bidder.save();
   }
 
   findAll() {
-    return this.bidderRepository.find();
+    return this.bidderModel.find().exec();
   }
 
-  findAllByBidder(bidderId: number) {
+  findAllByBidder(bidderId: string) {
     return this.bidsRepository.find({ where: { bidderId } });
   }
 
-  async findOne(id: number) {
-    const bidder = await this.bidderRepository.findOne({ where: { id } });
+  async findOne(id: string) {
+    let bidder: any;
+    try {
+      bidder = await this.bidderModel.findOne({ _id: id }).exec();
+    } catch (err) {
+      console.log(err);
+    }
     if (!bidder) {
-      throw new NotFoundException(`Bidder with ID ${id} not found`);
+      throw new NotFoundException(`Bidder with ID #${id} not found!`);
     }
     return bidder;
   }
 
-  async update(id: number, updateBidderDto: UpdateBidderDto) {
-    const bidder = await this.findOne(id);
-    Object.assign(bidder, updateBidderDto);
-    await this.bidderRepository.save(bidder);
-    return { ...bidder, message: `Bidder with ID ${id} updated successfully.` };
+  async update(id: string, updateBidderDto: UpdateBidderDto) {
+    const bidder = await this.bidderModel
+      .findOneAndUpdate({ _id: id }, { $set: updateBidderDto }, { new: true })
+      .exec();
+    if (!bidder) {
+      throw new NotFoundException(`Bidder with ID #${id} not found`);
+    }
+    return {
+      ...bidder['_doc'],
+      message: `Bidder with ID ${id} updated successfully.`,
+    };
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     const bidder = await this.findOne(id);
-    await this.bidderRepository.remove(bidder);
+    await bidder.deleteOne();
     return { message: `Bidder with ID ${id} removed successfully.` };
   }
 }

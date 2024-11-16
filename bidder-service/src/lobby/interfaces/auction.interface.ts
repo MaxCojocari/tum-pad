@@ -13,6 +13,6 @@ export interface Auction {
   endTimestamp: string;
   status: AuctionStatus;
   bids: any[];
-  winnerId?: number;
+  winnerId?: string;
   winningFinalAmount?: number;
 }

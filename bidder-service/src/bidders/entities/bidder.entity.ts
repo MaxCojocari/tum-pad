@@ -1,13 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
-@Entity()
+@Schema()
 export class Bidder {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column()
+  @Prop()
   name: string;
 
-  @Column()
+  @Prop()
   email: string;
 }
+
+export const BidderSchema = SchemaFactory.createForClass(Bidder);

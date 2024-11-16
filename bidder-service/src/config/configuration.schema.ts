@@ -12,4 +12,5 @@ export const configurationSchema = Joi.object({
   NATS_HOST: Joi.string().required(),
   NATS_PORT: Joi.number().default(4222),
   SERVICE_REGISTRY_GRPC_URL: Joi.string().required(),
+  MONGODB_URI: Joi.string().required(),
 });

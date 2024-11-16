@@ -16,6 +16,9 @@ export default () => ({
     password: process.env.POSTGRES_PASSWORD,
     db: process.env.POSTGRES_DB,
   },
+  mongodb: {
+    uri: process.env.MONGODB_URI,
+  },
   serviceRegistryGrpc: {
     url: process.env.SERVICE_REGISTRY_GRPC_URL,
   },
