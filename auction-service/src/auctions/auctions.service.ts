@@ -14,17 +14,25 @@ import * as dayjs from 'dayjs';
 import { AuctionStatus } from './interfaces/auction-status.enum';
 import { ClientProxy } from '@nestjs/microservices';
 import { FindBidsByAuctionResponse } from './interfaces/bids-service.interface';
-import { firstValueFrom, timeout } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
+import { RedisService } from '../redis/redis.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuctionsService {
+  private readonly ttl: number;
+
   constructor(
     @InjectRepository(Auction)
     private readonly auctionRepository: Repository<Auction>,
     @InjectRepository(Item)
     private readonly itemRepository: Repository<Item>,
     @Inject('BIDDER_SERVICE') private readonly natsClient: ClientProxy,
-  ) {}
+    private readonly redisService: RedisService,
+    private readonly configService: ConfigService,
+  ) {
+    this.ttl = this.configService.get<number>('CACHE_TTL');
+  }
 
   async create(createAuctionDto: CreateAuctionDto) {
     const { item, startTimestamp, durationMinutes, ...auctionData } =
@@ -57,11 +65,24 @@ export class AuctionsService {
     };
   }
 
-  findAll() {
-    return this.auctionRepository.find({ relations: ['item'] });
+  async findAll() {
+    const cacheKey = 'auctions:all';
+    const cachedData = await this.redisService.get(cacheKey);
+
+    if (cachedData) return cachedData;
+
+    const auctions = await this.auctionRepository.find({ relations: ['item'] });
+    await this.redisService.set(cacheKey, auctions, this.ttl);
+
+    return auctions;
   }
 
   async findOne(id: number) {
+    const cacheKey = `auctions:${id}`;
+    const cachedData = await this.redisService.get(cacheKey);
+
+    if (cachedData) return cachedData;
+
     const auction = await this.auctionRepository.findOne({
       where: { id },
       relations: { item: true },
@@ -71,15 +92,21 @@ export class AuctionsService {
       throw new NotFoundException(`Auction with ID ${id} not found`);
     }
 
-    const fetchedBids: FindBidsByAuctionResponse = await firstValueFrom(
+    const fetchedBids = await firstValueFrom(
       this.natsClient.send({ cmd: 'get-bids-by-auction' }, { auctionId: id }),
     );
+
     const bids = fetchedBids.bids.map(({ auctionId, ...rest }) => rest);
+
     const { lobbyWsUrl } = await firstValueFrom(
       this.natsClient.send({ cmd: 'get-auction-lobby' }, { auctionId: id }),
     );
 
-    return { ...auction, lobbyWsUrl, bids };
+    const response = { ...auction, lobbyWsUrl, bids };
+
+    await this.redisService.set(cacheKey, response, this.ttl);
+
+    return response;
   }
 
   async update(id: number, updateAuctionDto: UpdateAuctionDto) {

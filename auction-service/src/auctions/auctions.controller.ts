@@ -23,16 +23,16 @@ export class AuctionsController {
     return this.auctionsService.create(createAuctionDto);
   }
 
-  @UseInterceptors(CacheInterceptor)
-  @CacheKey('auctions')
-  @CacheTTL(5)
+  // @UseInterceptors(CacheInterceptor)
+  // @CacheKey('auctions')
+  // @CacheTTL(30)
   @Get()
   findAll() {
     return this.auctionsService.findAll();
   }
 
-  @UseInterceptors(CacheInterceptor)
-  @CacheTTL(5)
+  // @UseInterceptors(CacheInterceptor)
+  // @CacheTTL(30)
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.auctionsService.findOne(id);

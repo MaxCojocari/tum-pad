@@ -7,6 +7,7 @@ import { Item } from './entities/item.entity';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AuctionsJob } from './auctions.job';
 import { ConfigService } from '@nestjs/config';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ConfigService } from '@nestjs/config';
         inject: [ConfigService],
       },
     ]),
+    RedisModule,
   ],
   controllers: [AuctionsController],
   providers: [AuctionsService, AuctionsJob],

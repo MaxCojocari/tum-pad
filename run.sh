@@ -7,7 +7,7 @@ docker build -t tum-pad-bidder-service ./bidder-service
 docker build -t tum-pad-api-gateway ./api-gateway
 
 docker-compose -f docker-compose.prod.yml up -d \
-    redis-auction redis-gateway-registry \
+    redis-1 redis-2 redis-3 redis-gateway-registry \
     postgres-auction postgres-bidder pgadmin \
     service-discovery \
     mongo1 mongo2 mongo3 \

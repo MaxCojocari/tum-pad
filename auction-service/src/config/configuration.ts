@@ -14,8 +14,12 @@ export default () => ({
     db: process.env.POSTGRES_DB,
   },
   redis: {
-    host: process.env.REDIS_HOST,
-    port: +process.env.REDIS_PORT || 6379,
+    host_1: process.env.REDIS_HOST_1,
+    port_1: +process.env.REDIS_PORT_1 || 6379,
+    host_2: process.env.REDIS_HOST_2,
+    port_2: +process.env.REDIS_PORT_2 || 6379,
+    host_3: process.env.REDIS_HOST_3,
+    port_3: +process.env.REDIS_PORT_3 || 6379,
   },
   serviceRegistryGrpc: {
     url: process.env.SERVICE_REGISTRY_GRPC_URL,
@@ -23,5 +27,8 @@ export default () => ({
   nats: {
     host: process.env.NATS_HOST,
     port: +process.env.NATS_PORT || 4222,
+  },
+  cache: {
+    ttl: process.env.CACHE_TTL || 0,
   },
 });

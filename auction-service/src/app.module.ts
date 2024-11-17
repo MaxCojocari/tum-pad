@@ -17,6 +17,7 @@ import {
 } from '@willsoto/nestjs-prometheus';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
+import { RedisModule } from './redis/redis.module';
 
 @Global()
 @Module({
@@ -45,8 +46,8 @@ import { LoggingInterceptor } from './interceptors/logging.interceptor';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         store: redisStore,
-        host: configService.get<string>('redis.host'),
-        port: configService.get<string>('redis.port'),
+        host: configService.get<string>('redis.host_1'),
+        port: configService.get<string>('redis.port_1'),
         ttl: 10,
         isGlobal: true,
       }),
@@ -60,6 +61,7 @@ import { LoggingInterceptor } from './interceptors/logging.interceptor';
         enabled: true,
       },
     }),
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [

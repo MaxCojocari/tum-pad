@@ -1,25 +1,39 @@
 services:
-  redis-auction:
-    image: redis:6.2-alpine
-    container_name: redis-auction
+  redis-1:
+    image: redis:7.4
+    container_name: redis-1
     restart: always
     ports:
-      - "6379:6379"
+      - "8001:6379"
     volumes:
-      - redis-data:/data
-    env_file:
-      - ./auction-service/.env.local
+      - redis-data-1:/data
+
+  redis-2:
+    image: redis:7.4
+    container_name: redis-2
+    restart: always
+    ports:
+      - "8002:6379"
+    volumes:
+      - redis-data-2:/data
+
+  redis-3:
+    image: redis:7.4
+    container_name: redis-3
+    restart: always
+    ports:
+      - "8003:6379"
+    volumes:
+      - redis-data-3:/data
 
   redis-gateway-registry:
-    image: redis:6.2-alpine
+    image: redis:7.4
     container_name: redis-gateway-registry
     restart: always
     ports:
       - "6380:6379"
     volumes:
       - redis-data-registry:/data
-    env_file:
-      - ./api-gateway/.env.local
 
   postgres-auction:
     image: postgres:17.0
@@ -223,8 +237,14 @@ services:
       - "mongo3_data:/data/db"
       - "mongo3_config:/data/configdb"
 
+networks:
+  redis-cluster:
+    driver: bridge
+
 volumes:
-  redis-data:
+  redis-data-1:
+  redis-data-2:
+  redis-data-3:
   redis-data-registry:
   grafana-data:
   mongo1_data:
