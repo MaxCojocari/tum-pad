@@ -32,16 +32,21 @@ For each service, follow these steps to set up environment variables:
 Example for Auction Service (`./auction-service/.env.local`):
 
 ```shell
-POSTGRES_USER=your_db_username
-POSTGRES_PASSWORD=your_db_password
+POSTGRES_USER=hp
+POSTGRES_PASSWORD=1
 POSTGRES_HOST=db-auction
 POSTGRES_PORT=5432
 POSTGRES_DB=auction_service
-REDIS_HOST=redis-auction
-REDIS_PORT=6379
+CACHE_TTL=30
+REDIS_HOST_1=redis-1
+REDIS_PORT_1=6379
+REDIS_HOST_2=redis-2
+REDIS_PORT_2=6379
+REDIS_HOST_3=redis-3
+REDIS_PORT_3=6379
 APP_HOST=localhost
 APP_PORT=3000
-APP_REQ_TIMEOUT=5000
+APP_REQ_TIMEOUT=6000
 SERVICE_REGISTRY_GRPC_URL=service-discovery:50051
 NATS_HOST=nats-server
 NATS_PORT=4222
@@ -132,7 +137,7 @@ New features:
 - Integrate Prometheus and Grafana for effective service logging and monitoring.
 - Implement a Transaction Coordinator in the API Gateway to handle 2PC and long-running transaction mechanisms, ensuring safe and atomic creation of auctions and their lobbies in the Bidder Service.
 - Add a Data Warehouse for in-depth analysis of auctions, bids, bidders, and their activity.
-- Set up a PostgreSQL cluster with three replicas (one master for read and write, and two read-only followers) to ensure redundancy and failover via customized configurations.
+- Set up a MongoDB cluster with three replicas (one master for read and write, and two read-only followers) to ensure redundancy and failover via customized configurations.
 - Deploy a Redis cluster in the auction service for sharded caching of user data, utilizing consistent hashing for efficient data distribution.
 
 ## Technology Stack & Communication Patterns
@@ -151,11 +156,11 @@ New features:
         </tr>
         <tr>
             <td>Bidder Service</td>
-            <td>Nest.js (TypeScript) + PostgreSQL</td>
+            <td>Nest.js (TypeScript) + PostgreSQL + MongoDB</td>
         </tr>
         <tr>
             <td>API Gateway</td>
-            <td rowspan=2>Flask (Python)</td>
+            <td rowspan=2>Flask (Python) + Redis</td>
         </tr>
         <tr>
             <td>Service Discovery</td>
@@ -590,6 +595,7 @@ Each service, including
 - API Gateway
 - Service Discovery
 - PostgreSQL DBs
+- MongoDBs
 - Redis
 - NATS Message Broker
 
