@@ -9,6 +9,7 @@ import configuration from './config/configuration';
 import { configurationSchema } from './config/configuration.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { EtlModule } from './etl/etl.module';
 
 @Global()
 @Module({
@@ -54,6 +55,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         uri: configService.get<string>('mongodb.uri'),
       }),
     }),
+    EtlModule,
   ],
   controllers: [AppController],
   providers: [

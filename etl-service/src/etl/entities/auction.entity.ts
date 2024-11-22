@@ -1,0 +1,37 @@
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { AuctionStatus } from '../interfaces/auction-status.enum';
+import { Item } from './item.entity';
+
+@Entity()
+export class Auction {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  name: string;
+
+  @Column()
+  sellerId: string;
+
+  @ManyToOne(() => Item, (item) => item.auction)
+  item: Item;
+
+  @Column()
+  startTimestamp: string;
+
+  @Column()
+  endTimestamp: string;
+
+  @Column({
+    type: 'enum',
+    enum: AuctionStatus,
+    default: AuctionStatus.CREATED,
+  })
+  status: AuctionStatus;
+
+  @Column({ nullable: true })
+  winnerId?: string;
+
+  @Column({ type: 'double precision', nullable: true })
+  winningFinalAmount?: number;
+}
