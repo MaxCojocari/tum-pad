@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Repository } from 'typeorm';
-import { Auction } from './entities/auction.entity';
-import { Bid } from './entities/bid.entity';
-import { Item } from './entities/item.entity';
-import { Lobby } from './entities/lobby.entity';
-import { Bidder } from './entities/bidder.entity';
+import { Auction } from '../entities/auction.entity';
+import { Bid } from '../entities/bid.entity';
+import { Item } from '../entities/item.entity';
+import { Lobby } from '../entities/lobby.entity';
+import { Bidder } from '../entities/bidder.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()

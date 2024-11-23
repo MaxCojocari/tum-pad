@@ -12,7 +12,7 @@ export class Bid {
   @Prop({ required: true, type: Number })
   amount: number;
 
-  @Prop({ default: () => new Date(dayjs().toISOString()) })
+  @Prop({ required: true })
   timestamp: Date;
 }
 

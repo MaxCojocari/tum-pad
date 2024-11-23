@@ -10,11 +10,13 @@ import { configurationSchema } from './config/configuration.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EtlModule } from './etl/etl.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Global()
 @Module({
   imports: [
     HealthModule,
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       load: [configuration],
       validationSchema: configurationSchema,
@@ -31,6 +33,7 @@ import { EtlModule } from './etl/etl.module';
         username: configService.get<string>('database.auction.user'),
         password: configService.get<string>('database.auction.password'),
         database: configService.get<string>('database.auction.db'),
+        autoLoadEntities: true,
         synchronize: false,
       }),
     }),
@@ -45,6 +48,7 @@ import { EtlModule } from './etl/etl.module';
         username: configService.get<string>('database.bidder.user'),
         password: configService.get<string>('database.bidder.password'),
         database: configService.get<string>('database.bidder.db'),
+        autoLoadEntities: true,
         synchronize: false,
       }),
     }),
