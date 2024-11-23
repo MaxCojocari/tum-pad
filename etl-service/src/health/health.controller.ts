@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { InjectConnection } from '@nestjs/mongoose';
 import {
   HealthCheckService,
   HealthCheck,
@@ -6,8 +7,8 @@ import {
   TypeOrmHealthIndicator,
   MongooseHealthIndicator,
 } from '@nestjs/terminus';
-import { InjectConnection, InjectDataSource } from '@nestjs/typeorm';
-import { Connection, DataSource } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 
 @Controller('health')
 export class HealthController {
@@ -18,6 +19,10 @@ export class HealthController {
     private auctionDataSource: DataSource,
     @InjectDataSource('bidder')
     private bidderDataSource: DataSource,
+    @InjectConnection('dataWarehouse')
+    private warehouseDataSource: DataSource,
+    @InjectConnection('bidder')
+    private bidderMongoDataSource: DataSource,
     private mongoose: MongooseHealthIndicator,
   ) {}
 
@@ -33,7 +38,14 @@ export class HealthController {
         this.db.pingCheck('bidder-pg', {
           connection: this.bidderDataSource,
         }),
-      () => this.mongoose.pingCheck('mongodb'),
+      () =>
+        this.mongoose.pingCheck('bidder-mongodb', {
+          connection: this.bidderMongoDataSource,
+        }),
+      () =>
+        this.mongoose.pingCheck('data-warehouse-mongodb', {
+          connection: this.warehouseDataSource,
+        }),
     ]);
   }
 }

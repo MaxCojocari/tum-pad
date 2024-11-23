@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { EtlService } from './etl.service';
+import { EtlService } from './etl.job';
 
 describe('EtlService', () => {
   let service: EtlService;

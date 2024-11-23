@@ -49,10 +49,19 @@ import { EtlModule } from './etl/etl.module';
       }),
     }),
     MongooseModule.forRootAsync({
+      connectionName: 'bidder',
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('mongodb.uri'),
+        uri: configService.get<string>('mongodb.bidder.uri'),
+      }),
+    }),
+    MongooseModule.forRootAsync({
+      connectionName: 'dataWarehouse',
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>('mongodb.dataWarehouse.uri'),
       }),
     }),
     EtlModule,

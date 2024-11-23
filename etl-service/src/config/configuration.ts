@@ -22,6 +22,11 @@ export default () => ({
     },
   },
   mongodb: {
-    uri: process.env.MONGODB_URI,
+    bidder: {
+      uri: process.env.BIDDER_MONGODB_URI,
+    },
+    dataWarehouse: {
+      uri: process.env.DATA_WAREHOUSE_MONGODB_URI,
+    },
   },
 });

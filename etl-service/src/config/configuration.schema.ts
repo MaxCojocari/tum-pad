@@ -14,5 +14,6 @@ export const configurationSchema = Joi.object({
   APP_HOST: Joi.string().required(),
   APP_PORT: Joi.number().required(),
   APP_REQ_TIMEOUT: Joi.number().required(),
-  MONGODB_URI: Joi.string().required(),
+  BIDDER_MONGODB_URI: Joi.string().required(),
+  DATA_WAREHOUSE_MONGODB_URI: Joi.string().required(),
 });

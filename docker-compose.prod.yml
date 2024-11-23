@@ -237,9 +237,14 @@ services:
       - "mongo3_data:/data/db"
       - "mongo3_config:/data/configdb"
 
-networks:
-  redis-cluster:
-    driver: bridge
+  mongo-data-warehouse:
+    image: mongo:7.0
+    container_name: mongo-data-warehouse
+    command: ["--bind_ip_all", "--port", "27020"]
+    ports:
+      - 27020:27020
+    volumes:
+      - "mongo_data_warehouse_data:/data/db"
 
 volumes:
   redis-data-1:
@@ -253,3 +258,4 @@ volumes:
   mongo1_config:
   mongo2_config:
   mongo3_config:
+  mongo_data_warehouse_data:
