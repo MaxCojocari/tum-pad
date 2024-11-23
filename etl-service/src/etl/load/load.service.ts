@@ -20,22 +20,52 @@ export class LoadService {
   ) {}
 
   async loadAuctions(data: any[]) {
-    await this.auctionModel.insertMany(data);
+    for (const auction of data) {
+      await this.auctionModel.updateOne(
+        { id: auction.id },
+        { $set: auction },
+        { upsert: true },
+      );
+    }
   }
 
   async loadItems(data: any[]) {
-    await this.itemModel.insertMany(data);
+    for (const item of data) {
+      await this.itemModel.updateOne(
+        { id: item.id },
+        { $set: item },
+        { upsert: true },
+      );
+    }
   }
 
   async loadBids(data: any[]) {
-    await this.bidModel.insertMany(data);
+    for (const bid of data) {
+      await this.bidModel.updateOne(
+        { id: bid.id },
+        { $set: bid },
+        { upsert: true },
+      );
+    }
   }
 
   async loadBidders(data: any[]) {
-    await this.bidderModel.insertMany(data);
+    for (const bidder of data) {
+      await this.bidderModel.updateOne(
+        { email: bidder.email },
+        { $set: bidder },
+        { upsert: true },
+      );
+    }
   }
 
   async loadLobbies(data: any[]) {
-    await this.lobbyModel.insertMany(data);
+    for (const lobby of data) {
+      await this.lobbyModel.updateOne(
+        { id: lobby.id },
+        { $set: lobby },
+        { upsert: true },
+      );
+    }
   }
 }

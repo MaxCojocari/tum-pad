@@ -7,6 +7,10 @@ import { Bid } from '../entities/bid.entity';
 import { Bidder, BidderSchema } from '../entities/bidder.entity';
 import { Item } from '../entities/item.entity';
 import { Lobby } from '../entities/lobby.entity';
+import {
+  LastProcessedId,
+  LastProcessedIdSchema,
+} from '../schemas/lastProcessedId.schema';
 
 @Module({
   imports: [
@@ -20,6 +24,15 @@ import { Lobby } from '../entities/lobby.entity';
         },
       ],
       'bidder',
+    ),
+    MongooseModule.forFeature(
+      [
+        {
+          name: LastProcessedId.name,
+          schema: LastProcessedIdSchema,
+        },
+      ],
+      'dataWarehouse',
     ),
   ],
   providers: [ExtractService],

@@ -6,6 +6,9 @@ import { AuctionStatus } from '../interfaces/auction-status.enum';
 @Schema()
 export class Auction {
   @Prop({ required: true })
+  id: number;
+
+  @Prop({ required: true })
   name: string;
 
   @Prop({ required: true })

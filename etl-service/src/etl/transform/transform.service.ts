@@ -9,6 +9,7 @@ import { Item } from '../entities/item.entity';
 export class TransformService {
   transformAuctions(auctions: Auction[]): any[] {
     return auctions.map((auction) => ({
+      id: auction.id,
       name: auction.name,
       sellerId: auction.sellerId,
       item: {
@@ -27,6 +28,7 @@ export class TransformService {
 
   transformItems(items: Item[]) {
     return items.map((item) => ({
+      id: item.id,
       name: item.name,
       auction: item.auction,
       reservePrice: item.reservePrice,
@@ -36,6 +38,7 @@ export class TransformService {
 
   transformBids(bids: Bid[]): any[] {
     return bids.map((bid) => ({
+      id: bid.id,
       auctionId: bid.auctionId,
       bidderId: bid.bidderId,
       amount: bid.amount,
@@ -52,6 +55,7 @@ export class TransformService {
 
   transformLobbies(lobbies: Lobby[]): any[] {
     return lobbies.map((lobby) => ({
+      id: lobby.id,
       auctionId: lobby.auctionId,
       lobbyWsUrl: lobby.lobbyWsUrl,
     }));

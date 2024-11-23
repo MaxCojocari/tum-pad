@@ -1,8 +1,10 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
-import * as dayjs from 'dayjs';
 
 @Schema()
 export class Bid {
+  @Prop({ required: true })
+  id: number;
+
   @Prop({ required: true })
   auctionId: number;
 

@@ -14,15 +14,11 @@ export class EtlJob {
 
   @Cron(CronExpression.EVERY_5_SECONDS)
   async runETL() {
-    console.log('job running');
-
     const auctions = await this.extractService.extractAuctions();
     const items = await this.extractService.extractItems();
     const bids = await this.extractService.extractBids();
     const bidders = await this.extractService.extractBidders();
     const lobbies = await this.extractService.extractLobbies();
-
-    console.log('done extract');
 
     const transformedAuctions =
       this.transformService.transformAuctions(auctions);
@@ -31,13 +27,10 @@ export class EtlJob {
     const transformedBidders = this.transformService.transformBidders(bidders);
     const transformedLobbies = this.transformService.transformLobbies(lobbies);
 
-    console.log('done transform');
-
     await this.loadService.loadAuctions(transformedAuctions);
     await this.loadService.loadItems(transformedItems);
     await this.loadService.loadBids(transformedBids);
     await this.loadService.loadBidders(transformedBidders);
     await this.loadService.loadLobbies(transformedLobbies);
-    console.log('done load');
   }
 }

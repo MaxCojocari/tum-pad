@@ -5,6 +5,9 @@ import { Auction } from './auction.schema';
 @Schema()
 export class Item {
   @Prop({ required: true })
+  id: number;
+  
+  @Prop({ required: true })
   name: string;
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Auction' }] })
