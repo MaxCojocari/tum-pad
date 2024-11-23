@@ -6,11 +6,13 @@ docker build -t tum-pad-bidder-service ./bidder-service
 
 docker build -t tum-pad-api-gateway ./api-gateway
 
+docker build -t tum-pad-etl-service ./etl-service
+
 docker-compose -f docker-compose.prod.yml up -d \
     redis-1 redis-2 redis-3 redis-gateway-registry \
     postgres-auction postgres-bidder pgadmin \
-    service-discovery \
     mongo1 mongo2 mongo3 mongo-data-warehouse \
+    service-discovery etl-service \
     nats
 
 docker-compose exec redis-gateway-registry redis-cli FLUSHALL

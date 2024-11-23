@@ -246,6 +246,24 @@ services:
     volumes:
       - "mongo_data_warehouse_data:/data/db"
 
+  etl-service:
+    image: tum-pad-etl-service
+    container_name: etl-service
+    restart: always
+    env_file:
+      - ./etl-service/.env.local
+    environment:
+      - APP_PORT=9000
+    ports:
+      - "9000:9000"
+    depends_on:
+      - postgres-auction
+      - postgres-bidder
+      - mongo1
+      - mongo2
+      - mongo3
+      - mongo-data-warehouse
+
 volumes:
   redis-data-1:
   redis-data-2:
